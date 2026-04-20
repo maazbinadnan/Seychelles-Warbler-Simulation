@@ -6,6 +6,7 @@ import random
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import rankdata
+from PIL import Image 
 
 #______________________________________________________________________________
 
@@ -25,8 +26,6 @@ class Population():
                     "sex": sex[i],
                     "territory": None,
                     "life_history": "floater", 
-                    "num_subordinates": None,
-                    "quality": None,
                     "fitness": 1.0,
                     "year": 0 
                 }
@@ -115,9 +114,9 @@ class Kinship():
         inds = pop.get_inds()
         pop_size = pop.pop_size()
         self.pop = pop
-        initial = np.tile(0.0625, (pop_size,pop_size))
+        initial = np.tile(0.05, (pop_size,pop_size))
         np.fill_diagonal(initial, 1.0)
-        self.matrix = pd.DataFrame(initial, columns=(inds), index=(inds))
+        self.matrix = pd.DataFrame(initial, columns=(inds), index=(inds), dtype="float16")
     
         self.min_kinship = min_kinship
     
@@ -133,7 +132,7 @@ class Kinship():
         size = len(all_inds)
         
         # crate empty dataframe
-        new_matrix = pd.DataFrame(np.tile(0.0, (size,size)), columns=(all_inds), index=(all_inds))
+        new_matrix = pd.DataFrame(np.tile(0.05, (size,size)), columns=(all_inds), index=(all_inds))
         
         # add values for old_inds
         new_matrix.loc[old_inds, old_inds] = self.matrix.values
@@ -145,7 +144,7 @@ class Kinship():
             father = self.pop[ind]["father"]
 
             # kinship 
-            new_matrix.loc[:, ind] = (0.5 * new_matrix[mother]) + (0.5 * new_matrix[father]) # column
+            new_matrix.loc[:, ind] = np.multiply(0.5, np.add(new_matrix[mother].values, new_matrix[father].values)) # column
             new_matrix.loc[ind] = new_matrix.loc[:, ind] # row
             new_matrix.loc[ind, ind] = 1.0 
                 
@@ -154,6 +153,9 @@ class Kinship():
 
     def return_df(self):
         return self.matrix
+    
+    def calculate_relatedness(self, ind1, ind2):
+        return self.matrix[ind1, ind2]        
         
     def remove_outdated(self):
         inds = self.matrix.columns
@@ -175,9 +177,11 @@ class Kinship():
                 # if individual is not the mother or father of any living indiviual
                 if not ind in parents:
                 
-                    # if it has a maximum kinship of less than the minimum to living individuals
+                    # get kinship values for individual
                     ind_kinship = self.matrix[ind][self.matrix[ind] < 1.0]
                     ind_kinship = ind_kinship.loc[common_inds]
+                    
+                    # if it has a maximum kinship of less than the minimum to living individuals
                     if max(ind_kinship) < self.min_kinship:
                         
                         # remove the row and column of the individual
@@ -189,11 +193,11 @@ class Kinship():
 # TERRITORY CLASS
      
 class TerritoryMap():
-    def __init__(self, pop, grid, diameter, min_quality):
+    def __init__(self, pop, habitat_quality, diameter, min_quality):
+        self.habitat_quality = habitat_quality
         self.pop = pop
-        self.dims = grid.shape
+        self.dims = habitat_quality.shape
         self.territory_map = None
-        self.distance = None
         self.diameter = diameter
         self.min_quality = min_quality
         self.territory_dict = {}        
@@ -223,7 +227,7 @@ class TerritoryMap():
             distances = np.array((self.diameter))
             territory = 1
         
-        if np.min(distances) >= self.diameter/2: 
+        if np.min(distances) >= self.diameter/4: 
                         
             # check territory size
             new_territory = {
@@ -312,17 +316,24 @@ class TerritoryMap():
                 }
 
         else:
+            
             self.territory_map = territory_map
             
             for territory in self.territory_dict.keys():
                 self.territory_dict[territory]["size"] = np.sum(self.territory_map == territory)
-                self.territory_dict[territory]["quality"] = np.sum((self.territory_map == territory) * territory_map)
+                self.territory_dict[territory]["quality"] = np.sum((self.territory_map == territory) * self.habitat_quality)
                 self.territory_map = territory_map
+                
+            self.check_territories() # remove territories without the required habitat quality
 
     def check_territories(self):
+        removing = []
         for territory in self.territory_dict.keys():
             if not self.territory_dict[territory]["quality"] >= self.min_quality: 
-                self.remove_territory(territory)
+                removing.append(territory)
+            
+        for territory in removing:
+            self.remove_territory(territory)
 
     def remove_territory(self, territory):
         self.territory_dict.pop(territory)
@@ -365,7 +376,21 @@ class TerritoryMap():
 
             # update life history and territory of individual
             pop.update_life_history(new_primary, "primary", territory)
-            
+    
+    def count_inds(self, territory):
+        count = 0
+        
+        if self.territory_dict[territory]["primary_male"] is not None:
+            count += 1
+
+        if self.territory_dict[territory]["primary_female"] is not None:
+            count += 1
+        
+        count += len(self.territory_dict[territory]["subordinates"])
+        count += len(self.territory_dict[territory]["fledglings"])
+        
+        return count
+    
     def sync_territories(self, inds):
                 
         self.reset_territory_inds()
@@ -439,47 +464,65 @@ colour_dict = {0: 0}
 
 #______________________________________________________________________________
 
+# GET HABITAT QUALITY MAP
+
+cousin_island = Image.open("map/habitat_quality_small.png")
+
+# convert to greyscale
+cousin_island =  cousin_island.convert("L")
+
+# convert to np array
+cousin_island = np.array(cousin_island)
+
+#______________________________________________________________________________
+
 # INITIALISE SIMULATION
 
 # ploting years
 # the territory map will be plotted every ... years
-plot_years = 10
-
-# parameters
-year, years = 0, 100
-init_pop_size = 100
-init_sex_ratio = 0.5
-carrying_capacity = 100 # number of individuals
-quality_map = np.tile(1, (100,100))
-quality_map[100:200, 400:600] = 2
-total_quality = np.sum(quality_map)
-quality_map = np.divide(np.tile(carrying_capacity, (quality_map.shape)), total_quality)
-min_kinship = 0.25
+plot_years = 5
 
 # changable parameters 
 diameter = 20 # max diameter of territories. Must allow for at least min_quality to be possible
-min_quality = 3 # minimum quality of a territory, determining the minimum carrying capacity. must be greater than 3
-benefit_territory_quality = 0.01 
-benefit_subordinates = 0.05
+subordinate_benefit = 0.2 # 1 + (subordinate_benefit * number of subordinates)
 
 age_fitness_dict = {
-    0: 0.8,
-    1: 0.8, 
-    2: 0.8,
-    3: 0.8,
-    4: 0.8,
-    5: 0.8,
-    6: 0.8,
-    7: 0.8,
-    8: 0.8,
+    0: 1.0,
+    1: 1.0, 
+    2: 1.0,
+    3: 1.0,
+    4: 1.0,
+    5: 1.0,
+    6: 1.0,
+    7: 0.9,
+    8: 0.7,
+    9: 0.3,
+    10: 0.1,
+    11: 0.0,
     }
 
-life_history_fitness_dict = {
-    "fledgling": 0.8, 
-    "primary": 0.8, # primary higher than subordinate
-    "subordinate": 0.8, # subordinate higher than floater
-    "floater": 0.7
+life_history_fitness_dict = { # must be <= 1 and > 0
+    "fledgling": 1.0, 
+    "primary": 1.0, # primary higher than subordinate
+    "subordinate": 1.0, # subordinate higher than floater
+    "floater": 0.01
     }
+
+habitat_quality_dict = {
+    0: 1.4, # high
+    127: 1.2, # medium
+    195: 1, # low 
+    255: 0 # must always be 0, represents the ocean
+    }
+
+# parameters
+carrying_capacity = 300 # number of individuals 
+init_pop_size = carrying_capacity 
+year, years = 0, 50
+init_sex_ratio = 0.5
+min_kinship = 0.1
+min_quality = 3 # minimum quality of a territory, determining the minimum carrying capacity. must be greater than 3
+
 
 # population    
 sex = ["female"]*init_pop_size
@@ -495,15 +538,24 @@ kinship = Kinship(pop, min_kinship)
 kinship.update()
 
 # territory
+
+quality_map = np.tile(0.0, cousin_island.shape).astype(np.float16())
+
+for colour, quality in habitat_quality_dict.items():
+    quality_map[cousin_island == colour] = quality
+
+total_quality = np.sum(quality_map)
+quality_map = np.divide(quality_map, total_quality / carrying_capacity)
+
 territory_map = TerritoryMap(pop, quality_map, diameter, min_quality)
 territory_dict = territory_map.get_territories()
-
 
 for ind, sex in zip(inds, sex):
     fitness_df[ind] = {"ind": ind,
                        "sex": sex,
+                       "year": 0,
                        "fitness": 0}
-
+    
 #______________________________________________________________________________
 
 # RUN SIMULATION
@@ -545,9 +597,26 @@ while year <= years and surviving:
                     break
         else:
             territory = np.random.choice(territories)
-        
-        # select action
-        action = random.choice(actions) # AI action model would go here 
+
+
+        if pop[ind]["life_history"] == "floater" and pop[ind]["sex"] == "male":
+            action = "establish_territory"
+            
+        # if fledgling, request to become subordinate
+        if pop[ind]["life_history"] == "fledgling":
+            action = "request_subordinate"
+            if pop[ind]["territory"] in territories:
+                territory = pop[ind]["territory"]
+            
+        # if subordinate, compete for primary position
+        if pop[ind]["life_history"] == "subordinate":
+            action = "compete_primary"
+            if pop[ind]["territory"] in territories:
+                territory = pop[ind]["territory"]
+
+        # randomly select action        
+        else:
+            action = random.choice(actions) # AI action model would go here 
        
         #======================================================================
         
@@ -569,10 +638,9 @@ while year <= years and surviving:
             # success contains a boolean value indicating if the creation of the territory was succesful
             # a loop could be created to attempt creating a different territory if an attempt was unsuccesful due to the location
             # be careful as creating a territory may not always be possbile!            
-            
+        
     # update territory map
     territory_map.update() # update territory map
-    territory_map.check_territories() # remove territories without the required habitat quality
 
 #______________________________________________________________________________
 
@@ -619,8 +687,8 @@ while year <= years and surviving:
             # this will likely be influenced by the territory quality, current number of subordinates, and relatedness
             
             for ind in territory_map[territory]["subordinates"]:
-                male_choice = random.choices((True,False), weights=(0.7, 0.3))
-                female_choice = random.choices((True,False), weights=(0.7, 0.3))
+                male_choice = random.choices((True,False), weights=(0.1, 0.9))
+                female_choice = random.choices((True,False), weights=(0.1, 0.9))
                 if male_choice or female_choice:
                     evicted_subordinates.append(ind)            
             
@@ -631,8 +699,8 @@ while year <= years and surviving:
             # this will likely be influenced by the territory quality, current number of subordinates, and relatedness
         
             for ind in territory_map[territory]["subordinate_request"]:
-                male_choice = random.choices((True,False), weights=(0.3, 0.7))
-                female_choice = random.choices((True,False), weights=(0.3, 0.7))
+                male_choice = random.choices((True,False), weights=(0.9, 0.1))
+                female_choice = random.choices((True,False), weights=(0.9, 0.1))
                 if male_choice and female_choice:
                     new_subordinates.append(ind)
                     
@@ -645,6 +713,11 @@ while year <= years and surviving:
             # add chosen subordinates
             for ind in new_subordinates:
                 territory_map.add_subordinate(ind, territory)
+    
+    # disperse fledglings who unsuccesfully attempted to become a subordinate 
+    for ind in pop.get_inds():
+        if pop[ind]["life_history"] == "fledgling":
+            pop.update_life_history(ind, "floater")
     
     for territory in unclaimed_territories:
         territory_map.remove_territory(territory)
@@ -672,7 +745,7 @@ while year <= years and surviving:
 
             # list of all females who will produce offspring 
             reproducing_females = [primary_female]
-
+            
             #======================================================================
             # ALLOW SUBORDINATE REPRODUCTION
             # INDIVIDUAL AI MODEL REPLACES THIS SECTION    
@@ -680,8 +753,8 @@ while year <= years and surviving:
             # reproducing_females must contain a list of all females in the territory who will reproduce 
                 
             for subordinate in female_subordinates:
-                male_choice = random.choices((True,False), weights=(0.2, 0.8))
-                female_choice = random.choices((True,False), weights=(0.2, 0.8))
+                male_choice = random.choices((True,False), weights=(1.0, 0.0))
+                female_choice = random.choices((True,False), weights=(1.0, 0.0))
                 if female_choice and male_choice:
                     reproducing_females.append(subordinate)
                     
@@ -689,10 +762,11 @@ while year <= years and surviving:
                     
             # get number of subordinates 
             number_of_subordinates = len(subordinates)
-                
+
             # REPRODUCTION
             for female in reproducing_females:
             
+                #print(len(reproducing_females))
                 new_ind = max(pop.get_inds())+1
                                 
                 sex = random.choice(("male", "female"))                
@@ -711,22 +785,106 @@ while year <= years and surviving:
 
 # SURVIVAL
 
-    for ind in list(pop.get_inds()):
-        if year - pop[ind]["year"] > 8 : 
-            pop.remove(ind)
-
+    # sync territory
     territory_map.sync_territories(pop.get_inds())
     
-    fitness = carrying_capacity / len(pop.get_inds())
+    start_pop_size = pop.pop_size()
+
+    num_floaters = 0
+    num_territory_inds = 0
     
-    fitness = min(fitness, 1.0)
-    fitness = max(fitness, 0.0)
+    # track fitness
+    territory_fitness = [] # inds within territories 
+    floater_fitness = [] # floaters 
     
-    # dead
     for ind in list(pop.get_inds()):
+        
+        age = year - pop[ind]["year"]
+        life_history = pop[ind]["life_history"]
+        
+        # reset fitness
+        pop[ind]["fitness"] = 1.0
+            
+        # get number of floaters
+        if life_history == "floater":
+            num_floaters += 1
+            
+        else:
+            num_territory_inds += 1
+                
+        # fledgling fitness benefit from number of subordinates 
+        if life_history == "fledgling":
+            
+            territory = pop[ind]["territory"]
+            
+            num_subordinates = len(territory_map[territory]["subordinates"])
+                
+            pop[ind]["fitness"] *= 1 + (subordinate_benefit * num_subordinates)
+        
+        # age fitness
+        pop[ind]["fitness"] *= age_fitness_dict[age]
+        
+        # life history fitness 
+        pop[ind]["fitness"] *= life_history_fitness_dict[life_history]
+        
+        if life_history == "floater":
+            # append ind fitness to pop_fitness for floaters
+            floater_fitness.append(pop[ind]["fitness"])
+        else:      
+            # append ind fitness to pop_fitness for non-floaters
+            territory_fitness.append(pop[ind]["fitness"])
+            
+    # calculate mean_fitness 
+    mean_territory_fitness = np.mean(territory_fitness)
+    mean_floater_fitness = np.mean(floater_fitness)
+    
+    territory_fitness = []
+    for ind in list(pop.get_inds()):
+        if pop[ind]["life_history"] != "floater":
+            
+            territory = pop[ind]["territory"]
+            territory_carrying_capacity = territory_map[territory]["quality"]
+            territory_pop_size = territory_map.count_inds(territory)
+            floaters_in_territory = num_floaters * (territory_carrying_capacity / carrying_capacity)
+               
+            # calculate local density dependent selection 
+            fitness_scaling = territory_carrying_capacity / ((territory_pop_size * mean_territory_fitness) + (floaters_in_territory * mean_floater_fitness))
+                        
+            # update fitness 
+            pop[ind]["fitness"] *= fitness_scaling
+            pop[ind]["fitness"] = min(pop[ind]["fitness"], 1.0)
+            pop[ind]["fitness"] = max(pop[ind]["fitness"], 0.0)
+        
+            # append to fitness list
+            territory_fitness.append(pop[ind]["fitness"])
+            
+    # update mean_territory_fitness after density dependent fitness scaling 
+    mean_territory_fitness = np.mean(territory_fitness)
+    
+    if np.isnan(mean_territory_fitness):
+        mean_territory_fitness = 0.0
+
+    # estimate number of individuals living in territories who will survive 
+    surviving_territory_inds = num_territory_inds * mean_territory_fitness
+    
+    for ind in list(pop.get_inds()):
+        if pop[ind]["life_history"] == "floater":
+                        
+            # calculate global density dependent selection 
+            fitness_scaling = (carrying_capacity - surviving_territory_inds) / (num_floaters * mean_floater_fitness)
+            
+            # update fitness 
+            pop[ind]["fitness"] *= fitness_scaling
+            pop[ind]["fitness"] = min(pop[ind]["fitness"], 1.0)
+            pop[ind]["fitness"] = max(pop[ind]["fitness"], 0.0)
+
+    # survival
+    for ind in list(pop.get_inds()):
+        fitness = pop[ind]["fitness"]
+        
         if random.choices((True, False), weights=(1-fitness, fitness))[0]:            
             pop.remove(ind)
-            
+                
     if len(pop.get_inds()) == 0 or len(territory_map.territory_dict) == 0:
         surviving = False
    
@@ -761,6 +919,7 @@ while year <= years and surviving:
 
             fitness_df[ind] = {"ind": ind,
                                "sex": pop[ind]["sex"],
+                               "year": pop[ind]["year"],
                                "fitness": 0}
     
     # update new individuals
@@ -817,6 +976,10 @@ for df, name in zip([fitness_df.values(), ind_df, territory_df], ["fitness.csv",
     print("writing", name, "to", output_path)
     pd.DataFrame.from_dict(df).to_csv(output_path + name, index = False)
 
+# habitat quality map
+plt.figure(figsize=(8, 6))
+sns.heatmap(quality_map)
+plt.show()
 
 
 
