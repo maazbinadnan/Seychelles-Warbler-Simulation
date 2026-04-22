@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import rankdata
 from PIL import Image 
+import os
 
 #______________________________________________________________________________
 
@@ -155,7 +156,7 @@ class Kinship():
         return self.matrix
     
     def calculate_relatedness(self, ind1, ind2):
-        return self.matrix[ind1, ind2]        
+        return self.matrix.loc[ind1, ind2]
         
     def remove_outdated(self):
         inds = self.matrix.columns
@@ -440,11 +441,12 @@ class TerritoryMap():
             self.territory_dict[territory]["subordinates"] = []
             self.territory_dict[territory]["fledglings"] = []          
 
-#______________________________________________________________________________
-
 # CREATE DATASETS
 
 output_path = "output/"
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
+
 filename_start = "data_"
 
 # tracks reward for individuals
@@ -518,7 +520,7 @@ habitat_quality_dict = {
 # parameters
 carrying_capacity = 300 # number of individuals 
 init_pop_size = carrying_capacity 
-year, years = 0, 50
+year, years = 0, 10
 init_sex_ratio = 0.5
 min_kinship = 0.1
 min_quality = 3 # minimum quality of a territory, determining the minimum carrying capacity. must be greater than 3
@@ -550,6 +552,16 @@ quality_map = np.divide(quality_map, total_quality / carrying_capacity)
 territory_map = TerritoryMap(pop, quality_map, diameter, min_quality)
 territory_dict = territory_map.get_territories()
 
+individual_ai = IndividualAI(
+    pop=pop,
+    territory_map=territory_map,
+    kinship=kinship,
+    min_kinship=min_kinship,
+    year=year,
+    diameter=diameter,
+    min_quality=min_quality
+)
+
 for ind, sex in zip(inds, sex):
     fitness_df[ind] = {"ind": ind,
                        "sex": sex,
@@ -563,6 +575,7 @@ for ind, sex in zip(inds, sex):
 surviving = True
 
 while year <= years and surviving:
+    individual_ai.set_year(year)
         
 
 #______________________________________________________________________________
@@ -573,63 +586,18 @@ while year <= years and surviving:
     territory_map.sync_territories(pop.get_inds())
 
     for ind in pop.get_inds():
-                                
-        actions = pop.get_actions(ind)
-        
-        #======================================================================
-        # INDIVIDUAL AI MODEL REPLACES THIS SECTION         
-        
-        # AI model may have to select a territory or center to complete action
-        territories = list(territory_dict.keys())
-        center = (np.random.randint(0,quality_map.shape[0]), np.random.randint(0,quality_map.shape[1]))
-        
-        # if no territories exist
-        if len(territories) == 0:
-            while True:
-                try:
-                    actions.remove("compete_primary")
-                except ValueError:
-                    break
-            while True:
-                try:
-                    actions.remove("request_subordinate")
-                except ValueError:
-                    break
-        else:
-            territory = np.random.choice(territories)
-
-
-        if pop[ind]["life_history"] == "floater" and pop[ind]["sex"] == "male":
-            action = "establish_territory"
-            
-        # if fledgling, request to become subordinate
-        if pop[ind]["life_history"] == "fledgling":
-            action = "request_subordinate"
-            if pop[ind]["territory"] in territories:
-                territory = pop[ind]["territory"]
-            
-        # if subordinate, compete for primary position
-        if pop[ind]["life_history"] == "subordinate":
-            action = "compete_primary"
-            if pop[ind]["territory"] in territories:
-                territory = pop[ind]["territory"]
-
-        # randomly select action        
-        else:
-            action = random.choice(actions) # AI action model would go here 
-       
-        #======================================================================
+        action, territory, center = individual_ai.decide(ind)
         
         sex = pop[ind]["sex"]
         
         if action == "disperse":
             pop.update_life_history(ind, "floater")
             
-        elif action == "request_subordinate":   
+        elif action == "request_subordinate" and territory in territory_dict:
             territory_map.request_subordinate(ind, territory)
             # adds the indiviudal to a list of competing individuals for a primary position in a territory
             
-        elif action == "compete_primary":
+        elif action == "compete_primary" and territory in territory_dict:
             territory_map.compete_primary(ind, sex, territory)
             # adds the indiviudal to a list of competing individuals for a primary position in a territory
             
