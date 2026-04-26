@@ -9,8 +9,7 @@ class Kinship:
         self.pop = pop
         initial = np.tile(0.05, (pop_size, pop_size))
         np.fill_diagonal(initial, 1.0)
-        self.matrix = pd.DataFrame(initial, columns=(inds), index=(inds), dtype="float16")
-
+        self.matrix = pd.DataFrame(initial, columns=(inds), index=(inds))
         self.min_kinship = min_kinship
 
     def update(self):

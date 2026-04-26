@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 import random
 
@@ -60,6 +58,7 @@ def run_simulation():
     diameter = 20  # max diameter of territories. Must allow for at least min_quality to be possible
     subordinate_benefit = 0.2  # 1 + (subordinate_benefit * number of subordinates)
 
+    #defines the age : fitness values, aka if age is higher the fitness is lower, this is to simulate senescence. Must be between 0 and 1, with 1 being the maximum fitness. The age of 11 represents the maximum age an individual can reach, and must have a fitness of 0.0
     age_fitness_dict = {
         0: 1.0,
         1: 1.0,
@@ -75,6 +74,7 @@ def run_simulation():
         11: 0.0,
     }
 
+    # defines the life history : fitness values, with primary having the highest fitness and floaters the lowest. Must be between 0 and 1, with 1 being the maximum fitness
     life_history_fitness_dict = {
         # must be <= 1 and > 0
         "fledgling": 1.0,
@@ -83,8 +83,9 @@ def run_simulation():
         "floater": 0.01,
     }
 
+    # This maps the grayscale pixel colors of the provided Cousin Island map image to relative territory qualities (high, medium, low, or ocean)
     habitat_quality_dict = {
-        0: 1.4,  # high
+       0: 1.4,  # high
         127: 1.2,  # medium
         195: 1,  # low
         255: 0,  # must always be 0, represents the ocean
