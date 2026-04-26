@@ -12,7 +12,7 @@ from scipy.stats import rankdata
 
 from kinship import Kinship
 from population import Population
-from rule_based import ruleBasedAI
+from individual_models.rule_based import ruleBasedAI
 from territory import TerritoryMap
 
 
