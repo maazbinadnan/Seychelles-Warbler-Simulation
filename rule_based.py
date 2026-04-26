@@ -1,3 +1,8 @@
+import random
+
+import numpy as np
+
+
 class ruleBasedAI():
     def __init__(self, pop, territory_map, kinship, min_kinship, year, diameter, min_quality):
         self.pop = pop
@@ -216,3 +221,78 @@ class ruleBasedAI():
             return "request_subordinate", best_territory, fallback_center
 
         return "nothing", None, fallback_center
+
+    # --------------------------------------------------------------------------
+    # PRIMARY DECISIONS
+    # These are called by the simulation to resolve primary male/female choices
+    # about subordinates and reproduction in their territory.
+    # All rules derive from kin selection and ecological constraints logic.
+    # --------------------------------------------------------------------------
+
+    def decide_evict_subordinate(self, primary_male, primary_female, subordinate, territory):
+        """
+        Returns (male_evicts: bool, female_evicts: bool).
+
+        Primary female: evicts if the subordinate is unrelated (kinship below
+        min_kinship to herself) — no inclusive fitness benefit in tolerating them.
+
+        Primary male: evicts if territory quality is low and already has more
+        than one subordinate — resource pressure outweighs any helper benefit.
+        """
+        quality = self._territory_quality(territory)
+        territories = self.territory_map.get_territories()
+        num_subordinates = len(territories[territory]["subordinates"])
+
+        # Primary female decision: kin-based tolerance
+        relatedness = self._relatedness_to_primary_female(subordinate, territory)
+        female_evicts = relatedness < self.min_kinship
+
+        # Primary male decision: resource constraint when territory is poor
+        male_evicts = (not self._is_high_quality(quality)) and (num_subordinates > 1)
+
+        return male_evicts, female_evicts
+
+    def decide_accept_subordinate(self, primary_male, primary_female, candidate, territory):
+        """
+        Returns (male_accepts: bool, female_accepts: bool).
+
+        Both primaries must agree. Acceptance is driven by kin selection
+        (related candidate → shared fitness) and habitat quality (high-quality
+        territory can support an extra helper).
+        """
+        quality = self._territory_quality(territory)
+        relatedness = self._relatedness_to_primary_female(candidate, territory)
+
+        is_related = relatedness >= self.min_kinship
+        is_rich = self._is_high_quality(quality)
+
+        # Primary female: accept related individuals, or related ones on any territory
+        female_accepts = is_related
+
+        # Primary male: accept if territory is high quality OR candidate is related
+        male_accepts = is_rich or is_related
+
+        return male_accepts, female_accepts
+
+    def decide_subordinate_reproduction(self, primary_male, primary_female, subordinate_female, territory):
+        """
+        Returns (male_allows: bool, female_allows: bool).
+
+        Subordinate reproduction is only permitted on high-quality (surplus)
+        territories — the ecological constraints / benefit-of-philopatry framework.
+        Primary female additionally suppresses unrelated subordinate females
+        (reproductive competition); she tolerates related subordinates (daughters).
+        """
+        quality = self._territory_quality(territory)
+        relatedness = self._relatedness_to_primary_female(subordinate_female, territory)
+
+        is_rich = self._is_high_quality(quality)
+        is_related = relatedness >= self.min_kinship
+
+        # Primary female: allow only related subordinates (kin), and only on rich territories
+        female_allows = is_rich and is_related
+
+        # Primary male: allow on rich territories regardless of relatedness
+        male_allows = is_rich
+
+        return male_allows, female_allows
