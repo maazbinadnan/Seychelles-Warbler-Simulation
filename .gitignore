@@ -8,3 +8,9 @@ map/habitat_quality_small.csv
 /__pycache__
 __pycache__/kinship.cpython-313.pyc
 __pycache__/population.cpython-313.pyc
+/PDF
+local_test.py
+/.vscode
+/output
+/__pycache__
+/output
