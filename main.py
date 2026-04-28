@@ -40,7 +40,7 @@ def run_simulation():
 
     # GET HABITAT QUALITY MAP
 
-    cousin_island = Image.open("map/habitat_quality_small.png")
+    cousin_island = Image.open("Local_Testing/test_habitat.png")
 
     # convert to greyscale
     cousin_island = cousin_island.convert("L")
@@ -52,10 +52,10 @@ def run_simulation():
 
     # ploting years
     # the territory map will be plotted every ... years
-    plot_years = 5
+    plot_years = 10
 
     # changable parameters
-    diameter = 20  # max diameter of territories. Must allow for at least min_quality to be possible
+    diameter = 2 # max diameter of territories. Must allow for at least min_quality to be possible
     subordinate_benefit = 0.2  # 1 + (subordinate_benefit * number of subordinates)
 
     #defines the age : fitness values, aka if age is higher the fitness is lower, this is to simulate senescence. Must be between 0 and 1, with 1 being the maximum fitness. The age of 11 represents the maximum age an individual can reach, and must have a fitness of 0.0
@@ -92,18 +92,23 @@ def run_simulation():
     }
 
     # parameters
-    carrying_capacity = 300  # number of individuals
+    carrying_capacity = 25 # number of individuals
     init_pop_size = carrying_capacity
-    year, years = 0, 10
+    year, years = 0, 50
     init_sex_ratio = 0.5
     min_kinship = 0.1
-    min_quality = 3  # minimum quality of a territory, determining the minimum carrying capacity. must be greater than 3
+    min_quality = 1  # minimum quality of a territory, determining the minimum carrying capacity. must be greater than 3
+    print(carrying_capacity)
+
 
     # population
     sex = ["female"] * init_pop_size
     n_males = int(init_pop_size * init_sex_ratio)
     sex[0:n_males] = ["male"] * n_males
     inds = list(range(init_pop_size))
+
+    print("males:",n_males)
+    print("females:", init_pop_size - n_males)
 
     pop = Population(inds, sex)
     pop_dict = pop.get_dict()
@@ -114,14 +119,14 @@ def run_simulation():
 
     # territory
 
-    quality_map = np.tile(0.0, cousin_island.shape).astype(np.float16())
+    quality_map = np.tile(0.0, cousin_island.shape).astype(np.float16)
 
     for colour, quality in habitat_quality_dict.items():
         quality_map[cousin_island == colour] = quality
 
     total_quality = np.sum(quality_map)
     quality_map = np.divide(quality_map, total_quality / carrying_capacity)
-
+    print(quality_map)
     territory_map = TerritoryMap(pop, quality_map, diameter, min_quality)
     territory_dict = territory_map.get_territories()
 
@@ -150,10 +155,11 @@ def run_simulation():
 
         territory_map.reset_territory_competitions()
         territory_map.sync_territories(pop.get_inds())
-
+        # print("year:", year, "  population size:", len(pop.get_inds()), "  territory count:", len(territory_map.territory_dict))
         for ind in pop.get_inds():
+            # print(ind,pop[ind]["territory"])
             action, territory, center = individual_ai.decide(ind)
-
+            # print("action:", action, "  territory:", territory, "  center:", center , "sex:", pop[ind]["sex"])
             ind_sex = pop[ind]["sex"]
 
             if action == "disperse":
@@ -167,7 +173,7 @@ def run_simulation():
                 territory_map.compete_primary(ind, ind_sex, territory)
                 # adds the indiviudal to a list of competing individuals for a primary position in a territory
 
-            elif action == "establish_territory":
+            if action == "establish_territory":
                 success = territory_map.create_territory(ind, center)
                 # success contains a boolean value indicating if the creation of the territory was succesful
                 # a loop could be created to attempt creating a different territory if an attempt was unsuccesful due to the location
@@ -415,7 +421,8 @@ def run_simulation():
             plt.figure(figsize=(4, 4))
             plt.imshow(image, cmap=sns.color_palette("cubehelix", as_cmap=True), origin="upper", interpolation="nearest")
             plt.title("year:" + str(year))
-            plt.show()
+            plt.savefig(output_path + "territory_map_year_" + str(year) + ".png")
+            # plt.show()
 
         # update kinship
         kinship.update()
@@ -484,14 +491,16 @@ def run_simulation():
 
     # SAVE DATASETS
 
-    for df, name in zip([fitness_df.values(), ind_df, territory_df], ["fitness.csv", "population.csv", "territory.csv"]):
+    for df, name in zip([list(fitness_df.values()), ind_df, territory_df], ["fitness.csv", "population.csv", "territory.csv"]):
         print("writing", name, "to", output_path)
-        pd.DataFrame.from_dict(df).to_csv(output_path + name, index=False)
+        records = list(df)
+        pd.DataFrame.from_records(records).to_csv(os.path.join(output_path, name), index=False)
 
     # habitat quality map
     plt.figure(figsize=(8, 6))
     sns.heatmap(quality_map)
-    plt.show()
+    plt.savefig(output_path + "final_habitat_quality_map.png")
+    # plt.show()
 
 
 if __name__ == "__main__":

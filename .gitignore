@@ -14,3 +14,5 @@ local_test.py
 /output
 /__pycache__
 /output
+*.csv
+output/fitness.csv

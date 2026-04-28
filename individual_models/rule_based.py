@@ -21,9 +21,12 @@ class ruleBasedAI():
         sex = self.pop[ind]["sex"]
         territory = self.pop[ind]["territory"]
         age = self._get_age(ind)
-
+        
+        #we define a fallback center just in case
         center = self._random_center()
 
+
+        #we then define rules for each type of individual
         if life_history == "fledgling":
             return self._decide_fledgling(ind, sex, territory, center)
 
@@ -65,10 +68,12 @@ class ruleBasedAI():
         x_max = min(self.territory_map.habitat_quality.shape[0], x + radius + 1)
         y_min = max(0, y - radius)
         y_max = min(self.territory_map.habitat_quality.shape[1], y + radius + 1)
-
+        
+        #takes the small patch of habitat quality around the center 
         patch = self.territory_map.habitat_quality[x_min:x_max, y_min:y_max]
         if patch.size == 0:
             return 0.0
+        #sums it up to get the total quality of the territory
         return float(np.sum(patch))
 
     def _is_high_quality(self, quality):
@@ -98,12 +103,15 @@ class ruleBasedAI():
         vacancies = []
 
         for territory_id, info in self.territory_map.get_territories().items():
+            #if no one is currently occupying the territory, it's a vacancy
             if info[vacancy_key] is None:
+                #assign this territory as a potential vacancy for the individual
                 vacancies.append(territory_id)
 
         return self._choose_highest_quality_territory(vacancies)
 
     def _find_establish_center(self):
+        #establishing center if territory is empty or no vacancies
         habitat = self.territory_map.habitat_quality
         rows, cols = habitat.shape
         world_center = np.array([rows / 2.0, cols / 2.0])
@@ -198,6 +206,7 @@ class ruleBasedAI():
         return "nothing", territory, fallback_center
 
     def _decide_floater(self, ind, sex, fallback_center):
+        #get all territories to check for vacancies or good options
         territories = self.territory_map.get_territories()
 
         vacancy_territory = self._find_vacancy(sex)

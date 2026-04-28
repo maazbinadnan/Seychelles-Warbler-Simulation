@@ -1,5 +1,5 @@
 class Population:
-    def __init__(self, inds, sex):
+    def __init__(self, inds=[0,1], sex=['Male','Female']):
         self.pop_dict = {}
 
         for i in range(len(inds)):
