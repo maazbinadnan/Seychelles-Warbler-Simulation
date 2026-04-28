@@ -1,5 +1,5 @@
 import random
-
+random.seed(42)
 import numpy as np
 
 
@@ -24,7 +24,6 @@ class ruleBasedAI():
         
         #we define a fallback center just in case
         center = self._random_center()
-
 
         #we then define rules for each type of individual
         if life_history == "fledgling":
@@ -52,6 +51,8 @@ class ruleBasedAI():
 
     def _territory_quality(self, territory_id):
         territories = self.territory_map.get_territories()
+        
+        #check just in case
         if territory_id not in territories:
             return 0.0
 
@@ -110,42 +111,76 @@ class ruleBasedAI():
 
         return self._choose_highest_quality_territory(vacancies)
 
+    def _integral_image(self, arr):
+        """Compute 2-D summed-area table for fast rectangular patch sums."""
+        return np.cumsum(np.cumsum(arr.astype(np.float64), axis=0), axis=1)
+
+    def _patch_sums(self, integral, radius):
+        """Return a 2-D array where each cell is the sum of the (2r+1)^2 patch
+        centred at that cell, using the precomputed integral image."""
+        rows, cols = integral.shape
+        pad = np.zeros((rows + 1, cols + 1), dtype=np.float64)
+        pad[1:, 1:] = integral
+
+        r = radius
+        xs = np.arange(rows)
+        ys = np.arange(cols)
+
+        x1 = np.clip(xs - r - 1, -1, rows - 1)
+        x2 = np.clip(xs + r,      0, rows - 1)
+        y1 = np.clip(ys - r - 1, -1, cols - 1)
+        y2 = np.clip(ys + r,      0, cols - 1)
+
+        A = pad[x1[:, None] + 1, y1[None, :] + 1]
+        B = pad[x2[:, None] + 1, y1[None, :] + 1]
+        C = pad[x1[:, None] + 1, y2[None, :] + 1]
+        D = pad[x2[:, None] + 1, y2[None, :] + 1]
+
+        return D - B - C + A
+
     def _find_establish_center(self):
-        #establishing center if territory is empty or no vacancies
         habitat = self.territory_map.habitat_quality
         rows, cols = habitat.shape
-        world_center = np.array([rows / 2.0, cols / 2.0])
+        radius = max(1, self.diameter // 4)
 
-        existing_centers = []
-        for territory in self.territory_map.get_territories().values():
-            existing_centers.append(np.array(territory["center"], dtype=float))
+        # vectorised patch quality for every cell using integral image
+        integral = self._integral_image(habitat)
+        quality_grid = self._patch_sums(integral, radius)   # (rows, cols)
 
-        min_distance = self.diameter / 4.0
-        candidates = []
+        valid = quality_grid >= self.min_quality             # (rows, cols) bool
 
-        for x in range(rows):
-            for y in range(cols):
-                local_quality = self._local_quality((x, y), radius=max(1, self.diameter // 4))
-                if local_quality < self.min_quality:
-                    continue
-
-                point = np.array([x, y], dtype=float)
-
-                if len(existing_centers) > 0:
-                    distances = [np.linalg.norm(point - c) for c in existing_centers]
-                    if min(distances) < min_distance:
-                        continue
-
-                # Reward central and high-quality viable points.
-                centrality_penalty = np.linalg.norm(point - world_center)
-                score = local_quality - (0.05 * centrality_penalty)
-                candidates.append((score, (x, y)))
-
-        if len(candidates) == 0:
+        if not np.any(valid):
             return None
 
-        candidates.sort(key=lambda item: item[0], reverse=True)
-        return candidates[0][1]
+        existing_centers = np.array(
+            [t["center"] for t in self.territory_map.get_territories().values()],
+            dtype=float
+        )
+
+        min_distance = self.diameter / 4.0
+
+        if len(existing_centers) > 0:
+            xs = np.arange(rows, dtype=float)[:, None]
+            ys = np.arange(cols, dtype=float)[None, :]
+            dx = xs[None, :, :] - existing_centers[:, 0, None, None]
+            dy = ys[None, :, :] - existing_centers[:, 1, None, None]
+            dists = np.sqrt(dx * dx + dy * dy)
+            too_close = np.any(dists < min_distance, axis=0)
+            valid &= ~too_close
+
+        if not np.any(valid):
+            return None
+
+        world_center = np.array([rows / 2.0, cols / 2.0])
+        xs = np.arange(rows, dtype=float)[:, None]
+        ys = np.arange(cols, dtype=float)[None, :]
+        centrality_penalty = np.sqrt((xs - world_center[0])**2 + (ys - world_center[1])**2)
+
+        scores = quality_grid - 0.05 * centrality_penalty
+        scores[~valid] = -np.inf
+
+        best = np.argmax(scores)
+        return (int(best // cols), int(best % cols))
 
     def _decide_fledgling(self, ind, sex, natal_territory, fallback_center):
         territories = self.territory_map.get_territories()
@@ -206,6 +241,9 @@ class ruleBasedAI():
         return "nothing", territory, fallback_center
 
     def _decide_floater(self, ind, sex, fallback_center):
+
+        #floaters can take three actions -> ["compete_primary", "establish_territory", "request_subordinate"]
+
         #get all territories to check for vacancies or good options
         territories = self.territory_map.get_territories()
 
