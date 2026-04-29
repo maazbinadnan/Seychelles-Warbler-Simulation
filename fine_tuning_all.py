@@ -3,49 +3,54 @@ from ax.api.client import Client
 import pandas as pd
 import numpy as np
 
-def teri_counts():
+#These functions should return the corresponding number as result, you can change arguments as how you use the function in get_result
+#----------------------------------------------------------------------------------------------
+def teri_counts():# territory counts
     return
 
-def mean_grp():
+def mean_grp():#mean group size by territory quality
     return
 
-def anual_adl_teri():
+def anual_adl_teri():# annual adult survival by territory quality
     return
 
-def frst_yr_surv(df):
+def frst_yr_surv(df):#first year survival, this function has been done
     return len(df[(df['ind'] == 0) & (df['fitness'] > 0)])
 
-def pop_size():
+def pop_size():# population size
     return
 
-def hpl_eff():
+def hpl_eff():#helper effect on yearling production
     return
 
-def adlt_svvl():
+def adlt_svvl():# adult annual survival
     return
 
-def mean_hlp():
+def mean_hlp():#mean helpers per territory
     return
 
-def per_teri_hlp():
+def per_teri_hlp():# % territories with helper
     return
 
-def get_result():
-    terr = pd.read_csv('territory.csv')
-    pop = pd.read_csv('population.py')
-    fit = pd.read_csv('fitness.py')
+def get_result():# this is the function generating the final output metric
+    # the first 3 lines are to read the result files
+    terr = pd.read_csv('territory.csv')# read territory.csv
+    pop = pd.read_csv('population.csv')# read population.csv
+    fit = pd.read_csv('fitness.csv')# read fitness.csv
+    # calculate the scores, every variable should be a number score
     territory_counts = teri_counts()
     mean_grp_size = mean_grp()
     survival_teri_quality = anual_adl_teri()
-    first_survial = frst_yr_surv(fit)
+    first_survial = frst_yr_surv(fit) # this is an example
     population_size = pop_size()
     helper_effect = hpl_eff()
     adult_survival = adlt_svvl()
     mean_helpers = mean_hlp()
     percent_terri = per_teri_hlp()
+
     return [territory_counts, mean_grp_size, survival_teri_quality, first_survial, population_size, helper_effect, adult_survival, mean_helpers, percent_terri]
 
-
+#----------------------------------------------------------------------------------------------------------------
 client = Client()
 
 client.create_experiment(
