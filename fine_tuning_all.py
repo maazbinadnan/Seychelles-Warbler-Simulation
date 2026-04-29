@@ -6,14 +6,38 @@ import numpy as np
 #The functions between the dashed lines are to be defined
 #These functions should return the corresponding number as result, you can change arguments as how you use the function in get_result()
 #----------------------------------------------------------------------------------------------
-def teri_counts():# territory counts
-    return
+def teri_counts(df):# territory counts, yearly average
+    return df.groupby("year")["territory"].count().mean()
 
-def mean_grp():#mean group size by territory quality
-    return
+def mean_grp(popdf, terrdf):#mean group size by territory quality
+    merged = pd.merge(terrdf[["year", "territory", "quality"]], popdf, on=["year", "territory"])
+    grpSizes = merged.groupby(["year", "territory", "quality"]).size().reset_index(name="size")
+    results = {}
+    for quality in [1.0,1.2,1.4]:
+        results[quality] = grpSizes[grpSizes["quality"]==quality]["size"].mean()
+    return results
 
-def anual_adl_teri():# annual adult survival by territory quality
-    return
+def anual_adl_teri(popDf, terrDf):# annual adult survival by territory quality
+    #tallies for the each territory qualities, [seen, survived]
+    counts = {1.0: [0,0], 1.2: [0,0], 1.4: [0,0]}
+
+    merged = pd.merge(popDf[["year", "ind", "age", "territory"]],
+                      terrDf[["year", "territory", "quality"]],
+                      on=["year", "territory"])
+    years = merged["year"].unique()
+    for year in years[:-1]:
+        currentAdults = merged[(merged["year"]==year) & (merged["age"]>=1)]
+
+        nextYearInd = merged[merged["year"]==year+1]["ind"].unique()
+
+        for _, warb in currentAdults.iterrows():
+            quality = warb["quality"]
+            if quality in counts:
+                counts[quality][0] += 1
+                if warb["ind"] in nextYearInd:
+                    counts[quality][1] += 1
+
+    return {q: (tallies[1]/tallies[0] if tallies[0]>0 else 0) for q, tallies in counts.items()}
 
 def frst_yr_surv(df):#first year survival, this function has been done
     return len(df[(df['ind'] == 0) & (df['fitness'] > 0)])
@@ -25,14 +49,33 @@ def pop_size(df):# population size, finished
 def hpl_eff():#helper effect on yearling production
     return
 
-def adlt_svvl():# adult annual survival
-    return
+def adlt_svvl(df):# adult annual survival
+    survivalRates = []
+    #loops through each year
+    for year in df["year"].unique()[:-1]:
+        #gets the ind of all adults in this year
+        currentAdlt = df[(df["year"]==year) & (df["age"]>=1)]["ind"].unique()
 
-def mean_hlp():#mean helpers per territory
-    return
+        #skips if there are no adults, like the first year
+        if currentAdlt == 0:
+            continue
+        
+        #gets the ind of all warbs next year
+        nextYearAlive = df[df["year"]==year+1]["ind"].unique()
+        #counts all the adults in this year who are alive next year
+        surviveCount = sum(1 for ind in currentAdlt if ind in nextYearAlive)
 
-def per_teri_hlp():# % territories with helper
-    return
+        survivalRates.append(surviveCount/len(currentAdlt) * 100)
+
+    return np.mean(survivalRates)
+
+def mean_hlp(df):#mean helpers per territory, takes the average for each year (like Brouwers 2012), and then averages over all the years
+    averagePerYear = df.groupby("year")["num_subordinates"].mean()
+    return averagePerYear.mean()
+
+def per_teri_hlp(df):# % percentage of territories with helper for each year (like Brouwers 2012) 
+    yearlyPct = df.groupby("year").apply(lambda x: (x["num_subordinates"]>0).sum()/len(x) * 100)
+    return yearlyPct.mean()
 
 def get_result():# this is the function generating the final output metric
     # the first 3 lines are to read the result files
@@ -40,15 +83,15 @@ def get_result():# this is the function generating the final output metric
     pop = pd.read_csv('population.csv')# read population.csv
     fit = pd.read_csv('fitness.csv')# read fitness.csv
     # calculate the scores, every variable should be a number score
-    territory_counts = teri_counts()
-    mean_grp_size = mean_grp()
-    survival_teri_quality = anual_adl_teri()
+    territory_counts = teri_counts(terr)
+    mean_grp_size = mean_grp(pop, terr)
+    survival_teri_quality = anual_adl_teri(pop, terr)
     first_survial = frst_yr_surv(fit) # finished
     population_size = pop_size(pop)#finished
     helper_effect = hpl_eff()
-    adult_survival = adlt_svvl()
-    mean_helpers = mean_hlp()
-    percent_terri = per_teri_hlp()
+    adult_survival = adlt_svvl(pop)
+    mean_helpers = mean_hlp(terr)
+    percent_terri = per_teri_hlp(terr) 
 
     return [territory_counts, mean_grp_size, survival_teri_quality, first_survial, population_size, helper_effect, adult_survival, mean_helpers, percent_terri]
 
