@@ -24,7 +24,10 @@ def hpl_eff():
 def adlt_svvl():
     return
 
-def mean_hpl():
+def mean_hlp():
+    return
+
+def per_teri_hlp():
     return
 
 def get_result():
@@ -60,8 +63,15 @@ client.create_experiment(
         {"name": "hq_low", "type": "range", "bounds": [0.5, 1.5]},
     ],
     objectives={
-        "metric1": {"minimize": False},
-        "metric2": {"minimize": True},
+        "Territory counts": {"minimize": False},
+        "Mean group size by territory quality": {"minimize": False},
+        "Annual adults survival by territory quality": {"minimize": False},
+        "First year survival": {"minimize": False},
+        "Population size": {"minimize": False},
+        "Helper effect on yearling production": {"minimize": False},
+        "Adult annual survival": {"minimize": False},
+        "Mean helpers per territory": {"minimize": False},
+        "percent of territories with helpers": {"minimize": False},
     },
 )
 n_trials = 30
@@ -97,8 +107,15 @@ for _ in range(n_trials):
         client.complete_trial(
             trial_index=trial_index,
             raw_data={
-                "metric1": result[0],
-                "metric2": result[1],
+                "Territory counts": result[0],
+                "Mean group size by territory quality": result[1],
+                "Annual adults survival by territory quality": result[2],
+                "First year survival": result[3],
+                "Population size": result[4],
+                "Helper effect on yearling production": result[5],
+                "Adult annual survival": result[6],
+                "Mean helpers per territory": result[7],
+                "percent of territories with helpers": result[8],
             },
         )
     except Exception as e:
