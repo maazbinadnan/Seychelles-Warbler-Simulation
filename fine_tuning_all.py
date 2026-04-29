@@ -34,6 +34,16 @@ def get_result():
     terr = pd.read_csv('territory.csv')
     pop = pd.read_csv('population.py')
     fit = pd.read_csv('fitness.py')
+    teri_counts = teri_counts()
+    mean_grp = mean_grp()
+    anual_adl_teri = anual_adl_teri()
+    frst_yr_surv = frst_yr_surv()
+    pop_size = pop_size()
+    hpl_eff = hpl_eff()
+    adlt_svvl = adlt_svvl()
+    mean_hlp = mean_hlp()
+    per_teri_hlp = per_teri_hlp()
+    return [teri_counts, mean_grp, anual_adl_teri, frst_yr_surv, pop_size, hpl_eff, adlt_svvl, mean_hlp, per_teri_hlp]
 
 
 client = Client()
