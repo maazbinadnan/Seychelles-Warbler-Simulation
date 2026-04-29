@@ -1,5 +1,6 @@
 from main import run_simulation
 from ax.api.client import Client
+from ax.api.configs import RangeParameterConfig
 import pandas as pd
 import numpy as np
 
@@ -46,8 +47,8 @@ def pop_size(df):# population size, finished
     max_age = df['age'].max()
     return len(df[df['age'] == max_age])
 
-def hpl_eff():#helper effect on yearling production
-    return
+#def hpl_eff():#helper effect on yearling production
+  #  return
 
 def adlt_svvl(df):# adult annual survival
     survivalRates = []
@@ -88,99 +89,167 @@ def get_result():# this is the function generating the final output metric
     survival_teri_quality = anual_adl_teri(pop, terr)
     first_survial = frst_yr_surv(fit) # finished
     population_size = pop_size(pop)#finished
-    helper_effect = hpl_eff()
+    #helper_effect = hpl_eff()
     adult_survival = adlt_svvl(pop)
     mean_helpers = mean_hlp(terr)
     percent_terri = per_teri_hlp(terr) 
 
-    return [territory_counts, mean_grp_size, survival_teri_quality, first_survial, population_size, helper_effect, adult_survival, mean_helpers, percent_terri]
+    return [territory_counts, mean_grp_size, survival_teri_quality, first_survial, population_size, adult_survival, mean_helpers, percent_terri]
 
 #----------------------------------------------------------------------------------------------------------------
 client = Client()
 
-client.create_experiment(
+client.configure_experiment(
     name="multi_objective",
     parameters=[
-        {"name": "diameter", "type": "range", "bounds": [1.0, 5.0]},
-        {"name": "subordinate_benefit", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_0", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_1", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_2", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_3", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_4", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_5", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_6", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_7", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_8", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_9", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "age_10", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "lh_fledgling", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "lh_primary", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "lh_subordinate", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "lh_floater", "type": "range", "bounds": [0.01, 0.01]},
-        {"name": "hq_high", "type": "range", "bounds": [1.0, 2.0]},
-        {"name": "hq_medium", "type": "range", "bounds": [1.0, 2.0]},
-        {"name": "hq_low", "type": "range", "bounds": [0.5, 1.5]},
+        RangeParameterConfig(name="diameter",            parameter_type="float", bounds=(1.0, 5.0)),
+        RangeParameterConfig(name="subordinate_benefit", parameter_type="float", bounds=(0.0, 1.0)),
+        *[RangeParameterConfig(name=f"age_{i}",          parameter_type="float", bounds=(0.0, 1.0)) for i in range(11)],
+        RangeParameterConfig(name="lh_fledgling",        parameter_type="float", bounds=(0.0, 1.0)),
+        RangeParameterConfig(name="lh_primary",          parameter_type="float", bounds=(0.0, 1.0)),
+        RangeParameterConfig(name="lh_subordinate",      parameter_type="float", bounds=(0.0, 1.0)),
+        RangeParameterConfig(name="lh_floater",          parameter_type="float", bounds=(0.01, 0.01)),
+        RangeParameterConfig(name="hq_high",             parameter_type="float", bounds=(1.0, 2.0)),
+        RangeParameterConfig(name="hq_medium",           parameter_type="float", bounds=(1.0, 2.0)),
+        RangeParameterConfig(name="hq_low",              parameter_type="float", bounds=(0.5, 1.5)),
     ],
-    objectives={
-        "Territory counts": {"minimize": False},
-        "Mean group size by territory quality": {"minimize": False},
-        "Annual adults survival by territory quality": {"minimize": False},
-        "First year survival": {"minimize": False},
-        "Population size": {"minimize": False},
-        "Helper effect on yearling production": {"minimize": False},
-        "Adult annual survival": {"minimize": False},
-        "Mean helpers per territory": {"minimize": False},
-        "percent of territories with helpers": {"minimize": False},
-    },
 )
+client.configure_optimization(
+    objective=(
+        "territory_counts, mean_grp_size, survival_teri_quality, "
+        "first_survival, population_size, adult_survival, "
+        "mean_helpers, percent_terri"
+    )
+)
+# client.create_experiment(
+#     name="multi_objective",
+#     parameters=[
+#         {"name": "diameter", "type": "range", "bounds": [1.0, 5.0]},
+#         {"name": "subordinate_benefit", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_0", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_1", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_2", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_3", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_4", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_5", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_6", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_7", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_8", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_9", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "age_10", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "lh_fledgling", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "lh_primary", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "lh_subordinate", "type": "range", "bounds": [0.0, 1.0]},
+#         {"name": "lh_floater", "type": "range", "bounds": [0.01, 0.01]},
+#         {"name": "hq_high", "type": "range", "bounds": [1.0, 2.0]},
+#         {"name": "hq_medium", "type": "range", "bounds": [1.0, 2.0]},
+#         {"name": "hq_low", "type": "range", "bounds": [0.5, 1.5]},
+#     ],
+#     objectives={
+#         "Territory counts": {"minimize": False},
+#         "Mean group size by territory quality": {"minimize": False},
+#         "Annual adults survival by territory quality": {"minimize": False},
+#         "First year survival": {"minimize": False},
+#         "Population size": {"minimize": False},
+#         #"Helper effect on yearling production": {"minimize": False},
+#         "Adult annual survival": {"minimize": False},
+#         "Mean helpers per territory": {"minimize": False},
+#         "percent of territories with helpers": {"minimize": False},
+#     },
+# )
 n_trials = 30
-for _ in range(n_trials):
-    parameters, trial_index = client.get_next_trial()
+for i in range(n_trials):
+    print(f'iteration: {i}')
+    trials = client.get_next_trials(max_trials=1)
 
-    try:
-        age_fitness_dict = {i: parameters[f"age_{i}"] for i in range(11)}
-        age_fitness_dict[11] = 0.0
+    for trial_index, parameters in trials.items():
+        try:
+            age_fitness_dict = {j: parameters[f"age_{j}"] for j in range(11)}
+            age_fitness_dict[11] = 0.0
 
-        life_history_fitness_dict = {
-            "fledgling": parameters["lh_fledgling"],
-            "primary": parameters["lh_primary"],
-            "subordinate": parameters["lh_subordinate"],
-            "floater": parameters["lh_floater"],
-        }
+            life_history_fitness_dict = {
+                "fledgling":   parameters["lh_fledgling"],
+                "primary":     parameters["lh_primary"],
+                "subordinate": parameters["lh_subordinate"],
+                "floater":     parameters["lh_floater"],
+            }
 
-        habitat_quality_dict = {
-            0: parameters["hq_high"],
-            127: parameters["hq_medium"],
-            195: parameters["hq_low"],
-            255: 0,  # ocean always 0
-        }
-        run_simulation(
-            diameter=parameters["diameter"],
-            subordinate_benefit=parameters["subordinate_benefit"],
-            age_fitness_dict=age_fitness_dict,
-            life_history_fitness_dict=life_history_fitness_dict,
-            habitat_quality_dict=habitat_quality_dict,
-        )
-        result = get_result()
+            habitat_quality_dict = {
+                0:   parameters["hq_high"],
+                127: parameters["hq_medium"],
+                195: parameters["hq_low"],
+                255: 0,
+            }
 
-        client.complete_trial(
-            trial_index=trial_index,
-            raw_data={
-                "Territory counts": result[0],
-                "Mean group size by territory quality": result[1],
-                "Annual adults survival by territory quality": result[2],
-                "First year survival": result[3],
-                "Population size": result[4],
-                "Helper effect on yearling production": result[5],
-                "Adult annual survival": result[6],
-                "Mean helpers per territory": result[7],
-                "percent of territories with helpers": result[8],
-            },
-        )
-    except Exception as e:
-        client.mark_trial_failed(trial_index=trial_index)
-        raise
+            run_simulation(
+                diameter=parameters["diameter"],
+                subordinate_benefit=parameters["subordinate_benefit"],
+                age_fitness_dict=age_fitness_dict,
+                life_history_fitness_dict=life_history_fitness_dict,
+                habitat_quality_dict=habitat_quality_dict,
+            )
 
-pareto = client.get_pareto_optimal_parameters()
+            result = get_result()
+
+            client.complete_trial(
+                trial_index=trial_index,
+                raw_data={
+                    "territory_counts":       (result[0], 0.0),
+                    "mean_grp_size":          (result[1], 0.0),
+                    "survival_teri_quality":  (result[2], 0.0),
+                    "first_survival":         (result[3], 0.0),
+                    "population_size":        (result[4], 0.0),
+                    "adult_survival":         (result[5], 0.0),
+                    "mean_helpers":           (result[6], 0.0),
+                    "percent_terri":          (result[7], 0.0),
+                },
+            )
+        except Exception as e:
+            client.mark_trial_failed(trial_index=trial_index)
+            raise
+    # try:
+    #     age_fitness_dict = {i: parameters[f"age_{i}"] for i in range(11)}
+    #     age_fitness_dict[11] = 0.0
+    #
+    #     life_history_fitness_dict = {
+    #         "fledgling": parameters["lh_fledgling"],
+    #         "primary": parameters["lh_primary"],
+    #         "subordinate": parameters["lh_subordinate"],
+    #         "floater": parameters["lh_floater"],
+    #     }
+    #
+    #     habitat_quality_dict = {
+    #         0: parameters["hq_high"],
+    #         127: parameters["hq_medium"],
+    #         195: parameters["hq_low"],
+    #         255: 0,  # ocean always 0
+    #     }
+    #     run_simulation(
+    #         diameter=parameters["diameter"],
+    #         subordinate_benefit=parameters["subordinate_benefit"],
+    #         age_fitness_dict=age_fitness_dict,
+    #         life_history_fitness_dict=life_history_fitness_dict,
+    #         habitat_quality_dict=habitat_quality_dict,
+    #     )
+    #     result = get_result()
+    #
+    #     client.complete_trial(
+    #         trial_index=trial_index,
+    #         raw_data={
+    #             "Territory counts": result[0],
+    #             "Mean group size by territory quality": result[1],
+    #             "Annual adults survival by territory quality": result[2],
+    #             "First year survival": result[3],
+    #             "Population size": result[4],
+    #             #"Helper effect on yearling production": result[5],
+    #             "Adult annual survival": result[5],
+    #             "Mean helpers per territory": result[6],
+    #             "percent of territories with helpers": result[7],
+    #         },
+    #     )
+    # except Exception as e:
+    #     client.mark_trial_failed(trial_index=trial_index)
+    #     raise
+
+pareto = client.get_pareto_frontier()
 client.save_to_json_file("experiment.json")
