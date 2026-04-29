@@ -1,10 +1,37 @@
 from main import run_simulation
 from ax.api.client import Client
 import pandas as pd
+import numpy as np
 
-terr = pd.read_csv('territory.csv')
-pop = pd.read_csv('population.py')
-fit = pd.read_csv('fitness.py')
+def teri_counts():
+    return
+
+def mean_grp():
+    return
+
+def anual_adl_teri():
+    return
+
+def frst_yr_surv():
+    return
+
+def pop_size():
+    return
+
+def hpl_eff():
+    return
+
+def adlt_svvl():
+    return
+
+def mean_hpl():
+    return
+
+def get_result():
+    terr = pd.read_csv('territory.csv')
+    pop = pd.read_csv('population.py')
+    fit = pd.read_csv('fitness.py')
+
 
 client = Client()
 
@@ -41,10 +68,30 @@ n_trials = 30
 for _ in range(n_trials):
     parameters, trial_index = client.get_next_trial()
 
-    x1 = parameters["x1"]
-    x2 = parameters["x2"]
     try:
-        run_simulation(x1, x2)
+        age_fitness_dict = {i: parameters[f"age_{i}"] for i in range(11)}
+        age_fitness_dict[11] = 0.0
+
+        life_history_fitness_dict = {
+            "fledgling": parameters["lh_fledgling"],
+            "primary": parameters["lh_primary"],
+            "subordinate": parameters["lh_subordinate"],
+            "floater": parameters["lh_floater"],
+        }
+
+        habitat_quality_dict = {
+            0: parameters["hq_high"],
+            127: parameters["hq_medium"],
+            195: parameters["hq_low"],
+            255: 0,  # ocean always 0
+        }
+        run_simulation(
+            diameter=parameters["diameter"],
+            subordinate_benefit=parameters["subordinate_benefit"],
+            age_fitness_dict=age_fitness_dict,
+            life_history_fitness_dict=life_history_fitness_dict,
+            habitat_quality_dict=habitat_quality_dict,
+        )
         result = get_result()
 
         client.complete_trial(
@@ -58,5 +105,5 @@ for _ in range(n_trials):
         client.mark_trial_failed(trial_index=trial_index)
         raise
 
-
 pareto = client.get_pareto_optimal_parameters()
+client.save_to_json_file("experiment.json")
