@@ -12,8 +12,8 @@ def mean_grp():
 def anual_adl_teri():
     return
 
-def frst_yr_surv():
-    return
+def frst_yr_surv(df):
+    return len(df[(df['ind'] == 0) & (df['fitness'] > 0)])
 
 def pop_size():
     return
@@ -34,16 +34,16 @@ def get_result():
     terr = pd.read_csv('territory.csv')
     pop = pd.read_csv('population.py')
     fit = pd.read_csv('fitness.py')
-    teri_counts = teri_counts()
-    mean_grp = mean_grp()
-    anual_adl_teri = anual_adl_teri()
-    frst_yr_surv = frst_yr_surv()
-    pop_size = pop_size()
-    hpl_eff = hpl_eff()
-    adlt_svvl = adlt_svvl()
-    mean_hlp = mean_hlp()
-    per_teri_hlp = per_teri_hlp()
-    return [teri_counts, mean_grp, anual_adl_teri, frst_yr_surv, pop_size, hpl_eff, adlt_svvl, mean_hlp, per_teri_hlp]
+    territory_counts = teri_counts()
+    mean_grp_size = mean_grp()
+    survival_teri_quality = anual_adl_teri()
+    first_survial = frst_yr_surv(fit)
+    population_size = pop_size()
+    helper_effect = hpl_eff()
+    adult_survival = adlt_svvl()
+    mean_helpers = mean_hlp()
+    percent_terri = per_teri_hlp()
+    return [territory_counts, mean_grp_size, survival_teri_quality, first_survial, population_size, helper_effect, adult_survival, mean_helpers, percent_terri]
 
 
 client = Client()
