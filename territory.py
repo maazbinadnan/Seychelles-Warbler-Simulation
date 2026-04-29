@@ -45,7 +45,7 @@ class TerritoryMap:
             # check territory size
             new_territory = {"territory": territory, "center": center}
 
-            if self.update(new_territory)["quality"] >= self.min_quality:
+            if self.update(new_territory)["quality"] >= self.min_quality: # type: ignore
                 # add territory
                 self.territory_dict[new_territory["territory"]] = {
                     "primary_male": primary_male,
@@ -119,7 +119,7 @@ class TerritoryMap:
         if new_territory is not None:
             return {
                 "size": np.sum(territory_map == new_territory["territory"]),
-                "quality": np.sum((territory_map == new_territory["territory"]) * territory_map),
+                "quality": np.sum((territory_map == new_territory["territory"]) * self.habitat_quality),
                 "territory_map": territory_map,
             }
 

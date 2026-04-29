@@ -16,3 +16,5 @@ local_test.py
 /output
 *.csv
 output/fitness.csv
+/docs
+individual_models/__pycache__
