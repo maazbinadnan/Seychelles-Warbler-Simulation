@@ -3,7 +3,8 @@ from ax.api.client import Client
 import pandas as pd
 import numpy as np
 
-#These functions should return the corresponding number as result, you can change arguments as how you use the function in get_result
+#The functions between the dashed lines are to be defined
+#These functions should return the corresponding number as result, you can change arguments as how you use the function in get_result()
 #----------------------------------------------------------------------------------------------
 def teri_counts():# territory counts
     return
@@ -17,8 +18,9 @@ def anual_adl_teri():# annual adult survival by territory quality
 def frst_yr_surv(df):#first year survival, this function has been done
     return len(df[(df['ind'] == 0) & (df['fitness'] > 0)])
 
-def pop_size():# population size
-    return
+def pop_size(df):# population size, finished
+    max_age = df['age'].max()
+    return len(df[df['age'] == max_age])
 
 def hpl_eff():#helper effect on yearling production
     return
@@ -41,8 +43,8 @@ def get_result():# this is the function generating the final output metric
     territory_counts = teri_counts()
     mean_grp_size = mean_grp()
     survival_teri_quality = anual_adl_teri()
-    first_survial = frst_yr_surv(fit) # this is an example
-    population_size = pop_size()
+    first_survial = frst_yr_surv(fit) # finished
+    population_size = pop_size(pop)#finished
     helper_effect = hpl_eff()
     adult_survival = adlt_svvl()
     mean_helpers = mean_hlp()
