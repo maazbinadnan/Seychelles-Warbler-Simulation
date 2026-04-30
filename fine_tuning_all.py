@@ -214,6 +214,8 @@ print(f"Completed: {completed}, Failed: {failed}")
 try:
     pareto = client.get_pareto_frontier()
     print(pareto)
+    with open("pareto.txt", "w") as f:
+        f.write(str(pareto))
 except Exception as e:
     print(f"Could not compute Pareto frontier: {e}")
     print("Experiment saved to experiment.json.")
