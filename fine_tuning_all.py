@@ -44,7 +44,7 @@ def anual_adl_teri(popDf, terriDf):# annual adult survival by territory quality
     years = merged["year"].unique()
     for year in years[:-1]:
         currentAdults = merged[(merged["year"]==year) & (merged["age"]>=1)]
-        nextYearInd = popDf[popDf["year"]==year+1]["ind"].unique()
+        nextYearInd = set(popDf[popDf["year"]==year+1]["ind"].unique())
 
         for _, warb in currentAdults.iterrows():
             quality = warb["category"]
@@ -75,8 +75,8 @@ def adlt_svvl(df):# adult annual survival
         if len(currentAdlt) == 0:
             continue
         
-        #gets the ind of all warbs next year
-        nextYearAlive = df[df["year"]==year+1]["ind"].unique()
+        #gets the ind of all warbs next year, no repeats speeds up if
+        nextYearAlive = set(df[df["year"]==year+1]["ind"].unique())
         #counts all the adults in this year who are alive next year
         surviveCount = sum(1 for ind in currentAdlt if ind in nextYearAlive)
 
@@ -100,13 +100,13 @@ def get_result():# this is the function generating the final output metric
     # calculate the scores, every variable should be a number score
     territory_counts = teri_counts(terr)
     grp = mean_grp(pop, terr)
-    grp_low = grp[1.0]
-    grp_medium = grp[1.2]
-    grp_high = grp[1.4]
+    grp_low = grp["Low"]
+    grp_medium = grp["Medium"]
+    grp_high = grp["High"]
     surv = anual_adl_teri(pop, terr)
-    surv_low = surv[1.0]
-    surv_medium = surv[1.2]
-    surv_high = surv[1.4]
+    surv_low = surv["Low"]
+    surv_medium = surv["Medium"]
+    surv_high = surv["High"]
     first_survial = frst_yr_surv(fit) # finished
     population_size = pop_size(pop)#finished
     #helper_effect = hpl_eff()
