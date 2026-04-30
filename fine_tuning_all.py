@@ -102,16 +102,16 @@ client = Client()
 client.configure_experiment(
     name="multi_objective",
     parameters=[
-        RangeParameterConfig(name="diameter",            parameter_type="float", bounds=(1.0, 5.0)),
+        RangeParameterConfig(name="diameter",            parameter_type="float", bounds=(1.0, 20.0)),
         RangeParameterConfig(name="subordinate_benefit", parameter_type="float", bounds=(0.0, 1.0)),
-        *[RangeParameterConfig(name=f"age_{i}",          parameter_type="float", bounds=(0.0, 1.0)) for i in range(11)],
-        RangeParameterConfig(name="lh_fledgling",        parameter_type="float", bounds=(0.0, 1.0)),
-        RangeParameterConfig(name="lh_primary",          parameter_type="float", bounds=(0.0, 1.0)),
-        RangeParameterConfig(name="lh_subordinate",      parameter_type="float", bounds=(0.0, 1.0)),
+        *[RangeParameterConfig(name=f"age_{i}",          parameter_type="float", bounds=(0.1, 1.0)) for i in range(11)],
+        RangeParameterConfig(name="lh_fledgling",        parameter_type="float", bounds=(0.1, 1.0)),
+        RangeParameterConfig(name="lh_primary",          parameter_type="float", bounds=(0.1, 1.0)),
+        RangeParameterConfig(name="lh_subordinate",      parameter_type="float", bounds=(0.1, 1.0)),
         RangeParameterConfig(name="lh_floater",          parameter_type="float", bounds=(0.01, 0.05)),
-        RangeParameterConfig(name="hq_high",             parameter_type="float", bounds=(1.0, 2.0)),
-        RangeParameterConfig(name="hq_medium",           parameter_type="float", bounds=(1.0, 2.0)),
-        RangeParameterConfig(name="hq_low",              parameter_type="float", bounds=(0.5, 1.5)),
+        RangeParameterConfig(name="hq_high",             parameter_type="float", bounds=(1.5, 2.0)),
+        RangeParameterConfig(name="hq_medium",           parameter_type="float", bounds=(1.0, 1.5)),
+        RangeParameterConfig(name="hq_low",              parameter_type="float", bounds=(0.5, 1.0)),
     ],
 )
 client.configure_optimization(
