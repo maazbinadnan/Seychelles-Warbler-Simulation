@@ -7,10 +7,11 @@ import pandas as pd
 import seaborn as sns
 from PIL import Image
 from scipy.stats import rankdata
+import json
 
 from kinship import Kinship
 from population import Population
-from individual_models.rule_based import ruleBasedAI
+from individual_models.genetic_algorithm import GeneticController as ruleBasedAI
 from territory import TerritoryMap
 
 
