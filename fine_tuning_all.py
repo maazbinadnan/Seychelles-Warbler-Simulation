@@ -8,32 +8,47 @@ import os
 #The functions between the dashed lines are to be defined
 #These functions should return the corresponding number as result, you can change arguments as how you use the function in get_result()
 #----------------------------------------------------------------------------------------------
+def get_territory_quality(df):
+    newdf = df.copy()
+    newdf["avg_pxl_qlty"] = newdf["quality"]/newdf["size"]
+    highCutoff = newdf["avg_pxl_qlty"].quantile(0.879)
+    medCutoff = newdf["avg_pxl_qlty"].quantile(0.708)
+    def classify(val):
+        if val >= highCutoff:
+            return "High"
+        elif val >= medCutoff:
+            return "Medium"
+        else:
+            return "Low"
+    newdf["category"] = newdf["avg_pxl_qlty"].apply(classify)    
+    return newdf
+
 def teri_counts(df):# territory counts, yearly average
     return df.groupby("year")["territory"].count().mean()
 
 def mean_grp(popdf, terrdf):#mean group size by territory quality
-    merged = pd.merge(terrdf[["year", "territory", "quality"]], popdf, on=["year", "territory"])
-    grpSizes = merged.groupby(["year", "territory", "quality"]).size().reset_index(name="size")
-    results = {}
-    for quality in [1.0,1.2,1.4]:
-        results[quality] = grpSizes[grpSizes["quality"]==quality]["size"].mean()
-    return results
+    #update the df to put the territories into categories
+    newTerrDf = get_territory_quality(terrdf)
+    merged = pd.merge(newTerrDf[["year", "territory", "category"]], popdf, on=["year", "territory"])
+    grpCounts = merged.groupby(["year", "territory", "category"]).size().reset_index(name="birdCount")
+    return grpCounts.groupby("category")["birdCount"].mean().to_dict()
 
-def anual_adl_teri(popDf, terrDf):# annual adult survival by territory quality
+def anual_adl_teri(popDf, terriDf):# annual adult survival by territory quality
+    terrDf = get_territory_quality(terriDf)
+    
     #tallies for the each territory qualities, [seen, survived]
-    counts = {1.0: [0,0], 1.2: [0,0], 1.4: [0,0]}
+    counts = {"Low": [0,0], "Medium": [0,0], "High": [0,0]}
 
     merged = pd.merge(popDf[["year", "ind", "age", "territory"]],
-                      terrDf[["year", "territory", "quality"]],
+                      terrDf[["year", "territory", "category"]],
                       on=["year", "territory"])
     years = merged["year"].unique()
     for year in years[:-1]:
         currentAdults = merged[(merged["year"]==year) & (merged["age"]>=1)]
-
-        nextYearInd = merged[merged["year"]==year+1]["ind"].unique()
+        nextYearInd = set(popDf[popDf["year"]==year+1]["ind"].unique())
 
         for _, warb in currentAdults.iterrows():
-            quality = warb["quality"]
+            quality = warb["category"]
             if quality in counts:
                 counts[quality][0] += 1
                 if warb["ind"] in nextYearInd:
@@ -45,8 +60,7 @@ def frst_yr_surv(df):#first year survival, this function has been done
     return len(df[(df['ind'] == 0) & (df['fitness'] > 0)])
 
 def pop_size(df):# population size, finished
-    max_age = df['age'].max()
-    return len(df[df['age'] == max_age])
+    return df.groupby("year")["ind"].count().mean()
 
 #def hpl_eff():#helper effect on yearling production
   #  return
@@ -62,8 +76,8 @@ def adlt_svvl(df):# adult annual survival
         if len(currentAdlt) == 0:
             continue
         
-        #gets the ind of all warbs next year
-        nextYearAlive = df[df["year"]==year+1]["ind"].unique()
+        #gets the ind of all warbs next year, no repeats speeds up if
+        nextYearAlive = set(df[df["year"]==year+1]["ind"].unique())
         #counts all the adults in this year who are alive next year
         surviveCount = sum(1 for ind in currentAdlt if ind in nextYearAlive)
 
@@ -87,13 +101,13 @@ def get_result():# this is the function generating the final output metric
     # calculate the scores, every variable should be a number score
     territory_counts = teri_counts(terr)
     grp = mean_grp(pop, terr)
-    grp_low = grp[1.0]
-    grp_medium = grp[1.2]
-    grp_high = grp[1.4]
+    grp_low = grp["Low"]
+    grp_medium = grp["Medium"]
+    grp_high = grp["High"]
     surv = anual_adl_teri(pop, terr)
-    surv_low = surv[1.0]
-    surv_medium = surv[1.2]
-    surv_high = surv[1.4]
+    surv_low = surv["Low"]
+    surv_medium = surv["Medium"]
+    surv_high = surv["High"]
     first_survial = frst_yr_surv(fit) # finished
     population_size = pop_size(pop)#finished
     #helper_effect = hpl_eff()
