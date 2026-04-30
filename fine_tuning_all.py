@@ -180,8 +180,10 @@ for i in range(n_trials):
                 },
             )
         except Exception as e:
+            print(f"Trial {trial_index} failed: {e}")
             client.mark_trial_failed(trial_index=trial_index)
-            raise
+            n_trials += 1
+            continue
 
 pareto = client.get_pareto_frontier()
 client.save_to_json_file("experiment.json")
