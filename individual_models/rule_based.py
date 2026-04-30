@@ -1,345 +1,411 @@
-import random
-random.seed(42)
+from population import Population
+from territory import TerritoryMap
+from kinship import Kinship
 import numpy as np
-
+from typing import Tuple
+from typing import Any
 
 class ruleBasedAI():
-    def __init__(self, pop, territory_map, kinship, min_kinship, year, diameter, min_quality):
+    def __init__(self, pop : Population, territory_map : TerritoryMap, kinship: Kinship, start_year: int, min_kinship: float) -> None:
         self.pop = pop
         self.territory_map = territory_map
         self.kinship = kinship
+        self.start_year = start_year
         self.min_kinship = min_kinship
-        self.year = year
-        self.diameter = diameter
-        self.min_quality = min_quality
 
-    def set_year(self, year):
+    def _set_year(self, year):
         self.year = year
 
-    def decide(self, ind):
+
+    def action(self, ind) -> Tuple[int | None, tuple[int, int], str]:
         life_history = self.pop[ind]["life_history"]
-        sex = self.pop[ind]["sex"]
-        territory = self.pop[ind]["territory"]
-        age = self._get_age(ind)
-        
-        #we define a fallback center just in case
-        center = self._random_center()
-
-        #we then define rules for each type of individual
-        if life_history == "fledgling":
-            return self._decide_fledgling(ind, sex, territory, center)
-
-        if life_history == "subordinate":
-            return self._decide_subordinate(ind, sex, age, territory, center)
 
         if life_history == "floater":
-            return self._decide_floater(ind, sex, center)
-
-        # primaries stay in place during action phase
-        return "nothing", territory, center
-
-    def _get_age(self, ind):
-        if "age" in self.pop[ind]:
-            return self.pop[ind]["age"]
-        return self.year - self.pop[ind]["year"]
-
-    def _random_center(self):
-        return (
-            np.random.randint(0, self.territory_map.habitat_quality.shape[0]),
-            np.random.randint(0, self.territory_map.habitat_quality.shape[1])
-        )
-
-    def _territory_quality(self, territory_id):
-        territories = self.territory_map.get_territories()
+            return self._decide_floater(ind)
         
-        #check just in case
-        if territory_id not in territories:
-            return 0.0
-
-        quality = territories[territory_id]["quality"]
-        if quality is not None:
-            return quality
-
-        center = territories[territory_id]["center"]
-        return self._local_quality(center, radius=max(1, self.diameter // 4))
-
-    def _local_quality(self, center, radius):
-        x, y = center
-        x_min = max(0, x - radius)
-        x_max = min(self.territory_map.habitat_quality.shape[0], x + radius + 1)
-        y_min = max(0, y - radius)
-        y_max = min(self.territory_map.habitat_quality.shape[1], y + radius + 1)
+        if life_history == "fledgling":
+            return self._decide_fledgling(ind)
         
-        #takes the small patch of habitat quality around the center 
-        patch = self.territory_map.habitat_quality[x_min:x_max, y_min:y_max]
-        if patch.size == 0:
-            return 0.0
-        #sums it up to get the total quality of the territory
-        return float(np.sum(patch))
-
-    def _is_high_quality(self, quality):
-        return quality >= (self.min_quality * 2.0)
-
-    def _choose_highest_quality_territory(self, territory_ids):
-        if len(territory_ids) == 0:
-            return None
-
-        qualities = [self._territory_quality(t) for t in territory_ids]
-        return territory_ids[int(np.argmax(qualities))]
-
-    def _relatedness_to_primary_female(self, ind, territory):
-        territories = self.territory_map.get_territories()
-        primary_female = territories[territory]["primary_female"]
-
-        if primary_female is None:
-            return 0.0
-
-        try:
-            return float(self.kinship.calculate_relatedness(ind, primary_female))
-        except Exception:
-            return float(self.kinship.matrix.loc[ind, primary_female])
-
-    def _find_vacancy(self, sex):
-        vacancy_key = "primary_male" if sex == "male" else "primary_female"
-        vacancies = []
-
-        for territory_id, info in self.territory_map.get_territories().items():
-            #if no one is currently occupying the territory, it's a vacancy
-            if info[vacancy_key] is None:
-                #assign this territory as a potential vacancy for the individual
-                vacancies.append(territory_id)
-
-        return self._choose_highest_quality_territory(vacancies)
-
-    def _integral_image(self, arr):
-        """Compute 2-D summed-area table for fast rectangular patch sums."""
-        return np.cumsum(np.cumsum(arr.astype(np.float64), axis=0), axis=1)
-
-    def _patch_sums(self, integral, radius):
-        """Return a 2-D array where each cell is the sum of the (2r+1)^2 patch
-        centred at that cell, using the precomputed integral image."""
-        rows, cols = integral.shape
-        pad = np.zeros((rows + 1, cols + 1), dtype=np.float64)
-        pad[1:, 1:] = integral
-
-        r = radius
-        xs = np.arange(rows)
-        ys = np.arange(cols)
-
-        x1 = np.clip(xs - r - 1, -1, rows - 1)
-        x2 = np.clip(xs + r,      0, rows - 1)
-        y1 = np.clip(ys - r - 1, -1, cols - 1)
-        y2 = np.clip(ys + r,      0, cols - 1)
-
-        A = pad[x1[:, None] + 1, y1[None, :] + 1]
-        B = pad[x2[:, None] + 1, y1[None, :] + 1]
-        C = pad[x1[:, None] + 1, y2[None, :] + 1]
-        D = pad[x2[:, None] + 1, y2[None, :] + 1]
-
-        return D - B - C + A
-
-    def _find_establish_center(self):
-        habitat = self.territory_map.habitat_quality
-        rows, cols = habitat.shape
-        radius = max(1, self.diameter // 4)
-
-        # vectorised patch quality for every cell using integral image
-        integral = self._integral_image(habitat)
-        quality_grid = self._patch_sums(integral, radius)   # (rows, cols)
-
-        valid = quality_grid >= self.min_quality             # (rows, cols) bool
-
-        if not np.any(valid):
-            return None
-
-        existing_centers = np.array(
-            [t["center"] for t in self.territory_map.get_territories().values()],
-            dtype=float
-        )
-
-        min_distance = self.diameter / 4.0
-
-        if len(existing_centers) > 0:
-            xs = np.arange(rows, dtype=float)[:, None]
-            ys = np.arange(cols, dtype=float)[None, :]
-            dx = xs[None, :, :] - existing_centers[:, 0, None, None]
-            dy = ys[None, :, :] - existing_centers[:, 1, None, None]
-            dists = np.sqrt(dx * dx + dy * dy)
-            too_close = np.any(dists < min_distance, axis=0)
-            valid &= ~too_close
-
-        if not np.any(valid):
-            return None
-
-        world_center = np.array([rows / 2.0, cols / 2.0])
-        xs = np.arange(rows, dtype=float)[:, None]
-        ys = np.arange(cols, dtype=float)[None, :]
-        centrality_penalty = np.sqrt((xs - world_center[0])**2 + (ys - world_center[1])**2)
-
-        scores = quality_grid - 0.05 * centrality_penalty
-        scores[~valid] = -np.inf
-
-        best = np.argmax(scores)
-        return (int(best // cols), int(best % cols))
-
-    def _decide_fledgling(self, ind, sex, natal_territory, fallback_center):
-        territories = self.territory_map.get_territories()
-
-        if natal_territory not in territories:
-            return "disperse", None, fallback_center
-
-        quality = self._territory_quality(natal_territory)
-        is_high_quality = self._is_high_quality(quality)
-
-        if sex == "female":
-            if is_high_quality:
-                # Requested 84-100% stay-home range.
-                p_request = random.uniform(0.84, 1.0)
-            else:
-                p_request = 0.3
+        if life_history == "subordinate":
+            return self._decide_subordinate(ind)
         else:
-            # Male baseline from requested framework.
-            p_disperse = 0.25 if is_high_quality else 0.4
-            if random.random() < p_disperse:
-                return "disperse", None, fallback_center
-            return "request_subordinate", natal_territory, fallback_center
+            return self.pop[ind]["territory"], (-1,-1), "nothing"
 
-        if random.random() < p_request:
-            return "request_subordinate", natal_territory, fallback_center
-        return "disperse", None, fallback_center
+    '''
+    HELPER FUNCTIONS
+    '''
+    def _find_primary_vacancy(self, ind, sex: str, life_history: str) -> int | None:
+        
+        '''Find a territory with a vacant primary slot for the given sex.
+        Subordinate: only consider their own territory.
+        Floater: scan all territories, pick the one with the least competition.'''
 
-    def _decide_subordinate(self, ind, sex, age, territory, fallback_center):
+
+        primary_key = "primary_female" if sex == "female" else "primary_male"
+        competition_key = "primary_female_competition" if sex == "female" else "primary_male_competition"
+        territories = self.territory_map.get_territories()
+
+        if life_history == "subordinate":
+            own_territory = self.pop[ind]["territory"]
+            if own_territory in territories and territories[own_territory][primary_key] is None:
+                return own_territory
+            return None
+
+        # Floater: find all vacancies and pick the one with the least competition
+        candidates = [
+            (territory_id, len(info[competition_key]))
+            for territory_id, info in territories.items()
+            if info[primary_key] is None
+        ]
+        if not candidates:
+            return None
+        return min(candidates, key=lambda x: x[1])[0]
+
+    def _is_high_quality_territory(self, territory_id: int) -> bool:
+        '''Heuristic: high quality > 3.5, low quality <= 3.5'''
+        territories = self.territory_map.get_territories()
+        if territory_id not in territories:
+            return False
+        quality = territories[territory_id].get("quality")
+        if quality is None:
+            return False
+        return float(quality) >= 3.5
+
+    def _find_best_subordinate_territory(self, ind) -> int | None:
+        '''Ranks territories for a female floater requesting subordinate status using 5 heuristics:
+        1. Territory must be high-quality (>= threshold).
+        2. Territory must have capacity: quality > current group size (2 + subordinates).
+        3. Higher relatedness to primary_female ranked first.
+        4. Fewer existing subordinates preferred (lower group density).
+        5. Fewer pending subordinate requests preferred (better programmatic odds).
+        Returns the best territory_id, or None if no suitable territory exists.'''
+        territories = self.territory_map.get_territories()
+        scored = []
+
+        for territory_id, info in territories.items():
+            quality = info.get("quality")
+            if quality is None:
+                continue
+
+            # Heuristic 1: must be high quality
+            if not self._is_high_quality_territory(territory_id):
+                continue
+
+            # Heuristic 2: must have capacity
+            group_size = 2 + len(info["subordinates"])
+            if quality <= group_size:
+                continue
+
+            # Heuristic 3: relatedness to primary female
+            primary_female = info.get("primary_female")
+            if primary_female is None:
+                relatedness = 0.0
+            else:
+                try:
+                    relatedness = float(self.kinship.calculate_relatedness(ind, primary_female)) # type: ignore
+                except Exception:
+                    relatedness = 0.0
+
+            # Heuristics 4 & 5: lower is better, negate for descending sort
+            num_subordinates = len(info["subordinates"])
+            num_requests = len(info["subordinate_request"])
+
+            score = (relatedness, -num_subordinates, -num_requests)
+            scored.append((score, territory_id))
+
+        if not scored:
+            return None
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return scored[0][1]
+
+    '''
+    MAIN DECISION FUNCTIONS
+    '''
+    def _decide_floater(self, ind) -> Tuple[int | None, tuple[int, int], str]:
+
+        territory = self.pop[ind]["territory"]
+        sex = self.pop[ind]["sex"]
+
+        # Year 1 logic only
+        if self.year == self.start_year:
+            match sex:
+                case "male":
+                    center = (np.random.randint(0,self.territory_map.dims[0]), np.random.randint(0,self.territory_map.dims[1]))
+                    return territory, center, "establish_territory"
+                case "female":
+                    return territory, (-1,-1), "nothing"
+                case _:
+                    return territory, (-1,-1), "nothing"
+        else:
+            if sex == "female":
+                territory_id = self._find_primary_vacancy(ind, sex="female", life_history="floater")
+                if territory_id is not None:
+                    return territory_id, (-1,-1), "compete_primary"
+                else:
+                # fallback: request subordinate at a chosen territory with heuristics
+                    best_territory = self._find_best_subordinate_territory(ind)
+                if best_territory is not None:
+                    return best_territory, (-1,-1), "request_subordinate"
+                else:
+                # last resort: random territory
+                    territories = self.territory_map.get_territories()
+                if territories:
+                    random_territory = np.random.choice(list(territories.keys()))
+                    return random_territory, (-1,-1), "request_subordinate"
+
+            if sex == "male":
+                territory_id = self._find_primary_vacancy(ind, sex="male", life_history="floater")
+                if territory_id is not None:
+                    return territory_id, (-1,-1), "compete_primary"
+                # fallback: establish territory at random coordinates
+                center = (np.random.randint(0, self.territory_map.dims[0]), np.random.randint(0, self.territory_map.dims[1]))
+                return territory, center, "establish_territory"
+            return territory, (-1,-1), "nothing"
+
+
+    def _decide_fledgling(self, ind) -> Tuple[int | None, tuple[int, int], str]:
+        territory = self.pop[ind]["territory"]
+        sex = self.pop[ind]["sex"]
+
+        # Female fledglings: high-quality natal territory => help, else disperse.
+        if sex == "female" and territory in self.territory_map.get_territories():
+            if self._is_high_quality_territory(territory):
+                return territory, (-1, -1), "request_subordinate"
+            return territory, (-1, -1), "disperse"
+        elif sex == "male": 
+            return territory, (-1, -1), "disperse"
+        return territory, (-1, -1), "nothing"
+
+
+    def _decide_subordinate(self, ind) -> Tuple[int | None, tuple[int, int], str]:
+        sex = self.pop[ind]["sex"]
+        territory = self.pop[ind]["territory"]
         territories = self.territory_map.get_territories()
 
         if territory not in territories:
-            return "disperse", None, fallback_center
+            return territory, (-1, -1), "nothing"
 
-        current = territories[territory]
-        vacancy_key = "primary_male" if sex == "male" else "primary_female"
-
-        # Rule: immediate challenge for local primary vacancy.
-        if current[vacancy_key] is None:
-            return "compete_primary", territory, fallback_center
-
-        relatedness = self._relatedness_to_primary_female(ind, territory)
-        if relatedness < self.min_kinship:
-            if random.random() < 0.8:
-                return "disperse", None, fallback_center
-            return "nothing", territory, fallback_center
-
-        if age >= 8:
-            if random.random() < 0.65:
-                return "disperse", None, fallback_center
-            return "nothing", territory, fallback_center
-
-        quality = self._territory_quality(territory)
-        if self._is_high_quality(quality):
-            return "nothing", territory, fallback_center
-
-        if random.random() < 0.35:
-            return "disperse", None, fallback_center
-        return "nothing", territory, fallback_center
-
-    def _decide_floater(self, ind, sex, fallback_center):
-
-        #floaters can take three actions -> ["compete_primary", "establish_territory", "request_subordinate"]
-
-        #get all territories to check for vacancies or good options
-        territories = self.territory_map.get_territories()
-
-        vacancy_territory = self._find_vacancy(sex)
-        if vacancy_territory is not None:
-            return "compete_primary", vacancy_territory, fallback_center
+        if sex == "female":
+            to_compete_territory = self._find_primary_vacancy(ind, sex="female", life_history="subordinate")
+            if to_compete_territory is not None:
+                return to_compete_territory, (-1,-1) , "compete_primary"
+            
+            # Check relatedness to the territory's primary female
+            primary_female = territories[territory].get("primary_female")
+            if primary_female is None:
+                relatedness = 0.0
+            else:
+                relatedness = float(self.kinship.calculate_relatedness(ind, primary_female)) # type: ignore
+            # Stay if sufficiently related, otherwise disperse
+            if relatedness >= self.min_kinship:
+                return territory, (-1, -1), "nothing"
+            else:
+                return territory, (-1, -1), "disperse"
 
         if sex == "male":
-            center = self._find_establish_center()
-            if center is not None:
-                return "establish_territory", None, center
+            to_compete_territory = self._find_primary_vacancy(ind, sex="male", life_history="subordinate")
+            if to_compete_territory is not None:
+                return to_compete_territory, (-1, -1), "compete_primary"
+            else:
+                return territory, (-1, -1), "disperse"
 
-            # If no viable center exists, request subordinate in best territory.
-            if len(territories) > 0:
-                best_territory = self._choose_highest_quality_territory(list(territories.keys()))
-                return "request_subordinate", best_territory, fallback_center
-            return "nothing", None, fallback_center
+        # default: no action
+        return territory, (-1, -1), "nothing"
 
-        # Female floaters: request subordinate in high-quality territory.
-        if len(territories) > 0:
-            best_territory = self._choose_highest_quality_territory(list(territories.keys()))
-            return "request_subordinate", best_territory, fallback_center
-
-        return "nothing", None, fallback_center
-
-    # --------------------------------------------------------------------------
-    # PRIMARY DECISIONS
-    # These are called by the simulation to resolve primary male/female choices
-    # about subordinates and reproduction in their territory.
-    # All rules derive from kin selection and ecological constraints logic.
-    # --------------------------------------------------------------------------
-
-    def decide_evict_subordinate(self, primary_male, primary_female, subordinate, territory):
-        """
-        Returns (male_evicts: bool, female_evicts: bool).
-
-        Primary female: evicts if the subordinate is unrelated (kinship below
-        min_kinship to herself) — no inclusive fitness benefit in tolerating them.
-
-        Primary male: evicts if territory quality is low and already has more
-        than one subordinate — resource pressure outweighs any helper benefit.
-        """
-        quality = self._territory_quality(territory)
+    def evict_subordinate_male_primary(self, ind) -> int | None:
+        # get the primary bird for that individual's territory
+        territory = self.pop[ind]["territory"]
         territories = self.territory_map.get_territories()
-        num_subordinates = len(territories[territory]["subordinates"])
+        if territory not in territories:
+            return False
 
-        # Primary female decision: kin-based tolerance
-        relatedness = self._relatedness_to_primary_female(subordinate, territory)
-        female_evicts = relatedness < self.min_kinship
+        territory_info = territories[territory]
+        primary_male = territory_info.get("primary_male")
+        primary_female = territory_info.get("primary_female")
 
-        # Primary male decision: resource constraint when territory is poor
-        male_evicts = (not self._is_high_quality(quality)) and (num_subordinates > 1)
+        if ind not in territory_info.get("subordinates", []):
+            return False
 
-        return male_evicts, female_evicts
+        relatedness_to_male = 0.0
+        if primary_male is not None:
+            try:
+                relatedness_to_male = float(self.kinship.calculate_relatedness(ind, primary_male)) # type: ignore
+            except Exception:
+                relatedness_to_male = 0.0
 
-    def decide_accept_subordinate(self, primary_male, primary_female, candidate, territory):
-        """
-        Returns (male_accepts: bool, female_accepts: bool).
+        relatedness_to_female = 0.0
+        if primary_female is not None:
+            try:
+                relatedness_to_female = float(self.kinship.calculate_relatedness(ind, primary_female)) # type: ignore
+            except Exception:
+                relatedness_to_female = 0.0
 
-        Both primaries must agree. Acceptance is driven by kin selection
-        (related candidate → shared fitness) and habitat quality (high-quality
-        territory can support an extra helper).
-        """
-        quality = self._territory_quality(territory)
-        relatedness = self._relatedness_to_primary_female(candidate, territory)
+        if relatedness_to_male < self.min_kinship or relatedness_to_female < self.min_kinship:
+            return True
 
-        is_related = relatedness >= self.min_kinship
-        is_rich = self._is_high_quality(quality)
+        subordinates = territory_info.get("subordinates", [])
+        quality = territory_info.get("quality")
+        if quality is None:
+            return False
 
-        # Primary female: accept related individuals, or related ones on any territory
-        female_accepts = is_related
+        current_group_size = 2 + len(subordinates)
+        if current_group_size <= float(quality):
+            return False
 
-        # Primary male: accept if territory is high quality OR candidate is related
-        male_accepts = is_rich or is_related
+        excess = int(np.ceil(current_group_size - float(quality)))
+        male_subordinates = []
+        female_subordinates = []
 
-        return male_accepts, female_accepts
+        for subordinate in subordinates:
+            if subordinate == ind:
+                continue
+            sex = self.pop[subordinate]["sex"]
+            if sex == "male":
+                male_subordinates.append(subordinate)
+            else:
+                female_subordinates.append((subordinate, self.kinship.calculate_relatedness(subordinate, primary_female) if primary_female is not None else 0.0))
 
-    def decide_subordinate_reproduction(self, primary_male, primary_female, subordinate_female, territory):
-        """
-        Returns (male_allows: bool, female_allows: bool).
+        if self.pop[ind]["sex"] == "male":
+            if excess > 0:
+                return True
+            return False
 
-        Subordinate reproduction is only permitted on high-quality (surplus)
-        territories — the ecological constraints / benefit-of-philopatry framework.
-        Primary female additionally suppresses unrelated subordinate females
-        (reproductive competition); she tolerates related subordinates (daughters).
-        """
-        quality = self._territory_quality(territory)
-        relatedness = self._relatedness_to_primary_female(subordinate_female, territory)
+        if male_subordinates:
+            return False
 
-        is_rich = self._is_high_quality(quality)
-        is_related = relatedness >= self.min_kinship
+        if excess > 0:
+            female_subordinates.sort(key=lambda item: item[1])
+            return any(subordinate == ind for subordinate, _ in female_subordinates[:excess])
 
-        # Primary female: allow only related subordinates (kin), and only on rich territories
-        female_allows = is_rich and is_related
+        return False
 
-        # Primary male: allow on rich territories regardless of relatedness
-        male_allows = is_rich
+    def acccept_subordinate(self, ind) -> bool:
+        territory = self.pop[ind]["territory"]
+        territories = self.territory_map.get_territories()
+        if territory not in territories:
+            return False
 
-        return male_allows, female_allows
+        territory_info = territories[territory]
+        if ind not in territory_info.get("subordinate_request", []):
+            return False
+
+        primary_male = territory_info.get("primary_male")
+        primary_female = territory_info.get("primary_female")
+        if primary_male is None or primary_female is None:
+            return False
+
+        quality = territory_info.get("quality")
+        if quality is None:
+            return False
+
+        current_group_size = 2 + len(territory_info.get("subordinates", []))
+        if current_group_size >= float(quality):
+            return False
+
+        try:
+            relatedness_to_male = float(self.kinship.calculate_relatedness(ind, primary_male)) # type: ignore
+        except Exception:
+            relatedness_to_male = 0.0
+
+        try:
+            relatedness_to_female = float(self.kinship.calculate_relatedness(ind, primary_female)) # type: ignore
+        except Exception:
+            relatedness_to_female = 0.0
+
+        if relatedness_to_male <= self.min_kinship or relatedness_to_female <= self.min_kinship:
+            return False
+
+        vacancy_count = int(float(quality) - current_group_size)
+        if vacancy_count <= 0:
+            return False
+
+        if vacancy_count == 1 and self.pop[ind]["sex"] == "male":
+            female_requests = [request for request in territory_info.get("subordinate_request", []) if self.pop[request]["sex"] == "female"]
+            if female_requests:
+                return False
+
+        return True
+
+    def acccept_subordinate_reproduction(self, ind) -> bool:
+        territory = self.pop[ind]["territory"]
+        territories = self.territory_map.get_territories()
+        if territory not in territories:
+            return False
+
+        territory_info = territories[territory]
+        if ind not in territory_info.get("subordinate_request", []):
+            return False
+
+        if self.pop[ind]["sex"] != "female":
+            return False
+
+        primary_male = territory_info.get("primary_male")
+        primary_female = territory_info.get("primary_female")
+        if primary_male is None or primary_female is None:
+            return False
+
+        # Primary male always accepts subordinate female co-breeding.
+        male_accepts = True
+
+        try:
+            relatedness_to_female = float(self.kinship.calculate_relatedness(ind, primary_female)) # type: ignore
+        except Exception:
+            relatedness_to_female = 0.0
+
+        female_accepts = relatedness_to_female > self.min_kinship
+
+        return male_accepts and female_accepts
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
