@@ -98,6 +98,10 @@ def get_result():# this is the function generating the final output metric
     terr = pd.read_csv('output/territory.csv')# read territory.csv
     pop = pd.read_csv('output/population.csv')# read population.csv
     fit = pd.read_csv('output/fitness.csv')# read fitness.csv
+
+    yearsSurvived = pop["year"].max() + 1
+    multiplier = yearsSurvived/51
+
     # calculate the scores, every variable should be a number score
     territory_counts = teri_counts(terr)
     grp = mean_grp(pop, terr)
@@ -108,14 +112,14 @@ def get_result():# this is the function generating the final output metric
     surv_low = surv["Low"]
     surv_medium = surv["Medium"]
     surv_high = surv["High"]
-    first_survial = frst_yr_surv(fit) # finished
+    first_survival = frst_yr_surv(fit) # finished
     population_size = pop_size(pop)#finished
     #helper_effect = hpl_eff()
     adult_survival = adlt_svvl(pop)
     mean_helpers = mean_hlp(terr)
     percent_terri = per_teri_hlp(terr) 
 
-    return [territory_counts, grp_low, grp_medium, grp_high,surv_low, surv_medium, surv_high, first_survial, population_size, adult_survival, mean_helpers, percent_terri]
+    return [territory_counts*multiplier, grp_low*multiplier, grp_medium*multiplier, grp_high*multiplier, surv_low*multiplier, surv_medium*multiplier, surv_high*multiplier, first_survival*multiplier, population_size*multiplier, adult_survival*multiplier, mean_helpers*multiplier, percent_terri*multiplier]
 
 #----------------------------------------------------------------------------------------------------------------
 client = Client()
