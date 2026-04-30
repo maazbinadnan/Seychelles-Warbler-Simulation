@@ -11,7 +11,7 @@ from scipy.stats import rankdata
 
 from kinship import Kinship
 from population import Population
-from individual_models.rule_based_redone import ruleBasedAI
+from individual_models.rule_based import ruleBasedAI
 from territory import TerritoryMap
 
 
@@ -160,51 +160,6 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
         for ind in pop.get_inds():
 
             actions = pop.get_actions(ind)
-
-            #======================================================================
-            # INDIVIDUAL AI MODEL REPLACES THIS SECTION         
-
-            # AI model may have to select a territory or center to complete action
-            # territories = list(territory_dict.keys())
-            # center = (np.random.randint(0,quality_map.shape[0]), np.random.randint(0,quality_map.shape[1]))
-
-            # # if no territories exist
-            # if len(territories) == 0:
-            #     while True:
-            #         try:
-            #             actions.remove("compete_primary")
-            #         except ValueError:
-            #             break
-            #     while True:
-            #         try:
-            #             actions.remove("request_subordinate")
-            #         except ValueError:
-            #             break
-            # else:
-            #     territory = np.random.choice(territories)
-
-
-            # if pop[ind]["life_history"] == "floater" and pop[ind]["sex"] == "male":
-            #     action = "establish_territory"
-
-            # # if fledgling, request to become subordinate
-            # if pop[ind]["life_history"] == "fledgling":
-            #     action = "request_subordinate"
-            #     if pop[ind]["territory"] in territories:
-            #         territory = pop[ind]["territory"]
-
-            # # if subordinate, compete for primary position
-            # if pop[ind]["life_history"] == "subordinate":
-            #     action = "compete_primary"
-            #     if pop[ind]["territory"] in territories:
-            #         territory = pop[ind]["territory"]
-
-            # # randomly select action        
-            # else:
-            #     action = random.choice(actions) # AI action model would go here 
-
-            #======================================================================
-
             sex = pop[ind]["sex"]
 
             ruleAI._set_year(year=year)
@@ -280,9 +235,8 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                 # this will likely be influenced by the territory quality, current number of subordinates, and relatedness
 
                 for ind in territory_map[territory]["subordinates"]:
-                    male_choice = random.choices((True,False), weights=(0.1, 0.9))
-                    female_choice = random.choices((True,False), weights=(0.1, 0.9))
-                    if male_choice or female_choice:
+                    eviction = ruleAI.evict_subordinate_male_primary(ind)
+                    if eviction:
                         evicted_subordinates.append(ind)            
 
 
@@ -292,9 +246,8 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                 # this will likely be influenced by the territory quality, current number of subordinates, and relatedness
 
                 for ind in territory_map[territory]["subordinate_request"]:
-                    male_choice = random.choices((True,False), weights=(0.9, 0.1))
-                    female_choice = random.choices((True,False), weights=(0.9, 0.1))
-                    if male_choice and female_choice:
+                    accept_subordinate = ruleAI.acccept_subordinate(ind)
+                    if accept_subordinate:
                         new_subordinates.append(ind)
 
                 #======================================================================
@@ -346,9 +299,8 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                 # reproducing_females must contain a list of all females in the territory who will reproduce 
 
                 for subordinate in female_subordinates:
-                    male_choice = random.choices((True,False), weights=(1.0, 0.0))
-                    female_choice = random.choices((True,False), weights=(1.0, 0.0))
-                    if female_choice and male_choice:
+                    reproduce = ruleAI.acccept_subordinate_reproduction(subordinate)
+                    if reproduce:
                         reproducing_females.append(subordinate)
 
                 #======================================================================
@@ -502,7 +454,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
             plt.imshow(image, cmap=sns.color_palette("cubehelix", as_cmap=True), origin="upper", interpolation="nearest")
             plt.title("year:" + str(year))
             plt.savefig(os.path.join(output_path, "territory_map_year_" + str(year) + ".png"))
-            # plt.show()
+            plt.show()
 
         # update kinship
         kinship.update()
@@ -600,7 +552,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
     # habitat quality map
     plt.figure(figsize=(8, 6))
     sns.heatmap(quality_map)
-    # plt.show()
+    plt.show()
 
 if __name__ == "__main__":
     run_simulation()
