@@ -5,8 +5,6 @@ import pandas as pd
 import numpy as np
 import os
 
-#The functions between the dashed lines are to be defined
-#These functions should return the corresponding number as result, you can change arguments as how you use the function in get_result()
 #----------------------------------------------------------------------------------------------
 def get_territory_quality(df):
     newdf = df.copy()
@@ -62,9 +60,6 @@ def frst_yr_surv(df):#first year survival, this function has been done
 def pop_size(df):# population size, finished
     return df.groupby("year")["ind"].count().mean()
 
-#def hpl_eff():#helper effect on yearling production
-  #  return
-
 def adlt_svvl(df):# adult annual survival
     survivalRates = []
     #loops through each year
@@ -102,7 +97,7 @@ def get_result():# this is the function generating the final output metric
     yearsSurvived = pop["year"].max() + 1
     multiplier = yearsSurvived/51
 
-    # calculate the scores, every variable should be a number score
+    # calculate the scores
     territory_counts = teri_counts(terr)
     grp = mean_grp(pop, terr)
     grp_low = grp["Low"]
@@ -112,9 +107,8 @@ def get_result():# this is the function generating the final output metric
     surv_low = surv["Low"]
     surv_medium = surv["Medium"]
     surv_high = surv["High"]
-    first_survival = frst_yr_surv(fit) # finished
-    population_size = pop_size(pop)#finished
-    #helper_effect = hpl_eff()
+    first_survival = frst_yr_surv(fit)
+    population_size = pop_size(pop)
     adult_survival = adlt_svvl(pop)
     mean_helpers = mean_hlp(terr)
     percent_terri = per_teri_hlp(terr) 
