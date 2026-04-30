@@ -85,8 +85,14 @@ def get_result():# this is the function generating the final output metric
     fit = pd.read_csv('output/fitness.csv')# read fitness.csv
     # calculate the scores, every variable should be a number score
     territory_counts = teri_counts(terr)
-    mean_grp_size = mean_grp(pop, terr)
-    survival_teri_quality = anual_adl_teri(pop, terr)
+    grp = mean_grp(pop, terr)
+    grp_low = grp[1.0]
+    grp_medium = grp[1.2]
+    grp_high = grp[1.4]
+    surv = anual_adl_teri(pop, terr)
+    surv_low = surv[1.0]
+    surv_medium = surv[1.2]
+    surv_high = surv[1.4]
     first_survial = frst_yr_surv(fit) # finished
     population_size = pop_size(pop)#finished
     #helper_effect = hpl_eff()
@@ -94,7 +100,7 @@ def get_result():# this is the function generating the final output metric
     mean_helpers = mean_hlp(terr)
     percent_terri = per_teri_hlp(terr) 
 
-    return [territory_counts, mean_grp_size, survival_teri_quality, first_survial, population_size, adult_survival, mean_helpers, percent_terri]
+    return [territory_counts, grp_low, grp_medium, grp_high,surv_low, surv_medium, surv_high, first_survial, population_size, adult_survival, mean_helpers, percent_terri]
 
 #----------------------------------------------------------------------------------------------------------------
 client = Client()
@@ -116,7 +122,7 @@ client.configure_experiment(
 )
 client.configure_optimization(
     objective=(
-        "territory_counts, mean_grp_size, survival_teri_quality, "
+        "territory_counts, grp_low, grp_medium, grp_high, surv_low, surv_medium, surv_high, "
         "first_survival, population_size, adult_survival, "
         "mean_helpers, percent_terri"
     )
@@ -159,14 +165,18 @@ for i in range(n_trials):
             client.complete_trial(
                 trial_index=trial_index,
                 raw_data={
-                    "territory_counts":       (result[0], 0.0),
-                    "mean_grp_size":          (result[1], 0.0),
-                    "survival_teri_quality":  (result[2], 0.0),
-                    "first_survival":         (result[3], 0.0),
-                    "population_size":        (result[4], 0.0),
-                    "adult_survival":         (result[5], 0.0),
-                    "mean_helpers":           (result[6], 0.0),
-                    "percent_terri":          (result[7], 0.0),
+                    "territory_counts":   (result[0], 0.0),
+                    "grp_low":            (result[1], 0.0),
+                    "grp_medium":         (result[2], 0.0),
+                    "grp_high":           (result[3], 0.0),
+                    "surv_low":           (result[4], 0.0),
+                    "surv_medium":        (result[5], 0.0),
+                    "surv_high":          (result[6], 0.0),
+                    "first_survival":     (result[7], 0.0),
+                    "population_size":    (result[8], 0.0),
+                    "adult_survival":     (result[9], 0.0),
+                    "mean_helpers":       (result[10], 0.0),
+                    "percent_terri":      (result[11], 0.0),
                 },
             )
         except Exception as e:
