@@ -58,7 +58,7 @@ def adlt_svvl(df):# adult annual survival
         currentAdlt = df[(df["year"]==year) & (df["age"]>=1)]["ind"].unique()
 
         #skips if there are no adults, like the first year
-        if currentAdlt == 0:
+        if len(currentAdlt) == 0:
             continue
         
         #gets the ind of all warbs next year
