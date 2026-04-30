@@ -4,6 +4,7 @@ from ax.api.configs import RangeParameterConfig
 import pandas as pd
 import numpy as np
 import os
+
 #The functions between the dashed lines are to be defined
 #These functions should return the corresponding number as result, you can change arguments as how you use the function in get_result()
 #----------------------------------------------------------------------------------------------
@@ -120,6 +121,10 @@ client.configure_experiment(
         RangeParameterConfig(name="hq_low",              parameter_type="float", bounds=(0.5, 1.0)),
     ],
 )
+client.configure_generation_strategy(
+    min_observed_initialization_trials=10,
+    initialization_budget=20
+)
 client.configure_optimization(
     objective=(
         "territory_counts, grp_low, grp_medium, grp_high, surv_low, surv_medium, surv_high, "
@@ -128,7 +133,7 @@ client.configure_optimization(
     )
 )
 
-n_trials = 30
+n_trials = 100
 for i in range(n_trials):
     print(f'iteration: {i}')
     trials = client.get_next_trials(max_trials=1)
@@ -161,6 +166,11 @@ for i in range(n_trials):
             )
 
             result = get_result()
+            if any(np.isnan(result)) or any(np.isinf(result)):
+                print("Bad result detected:", result)
+                client.mark_trial_failed(trial_index)
+                n_trials += 1
+                continue
 
             client.complete_trial(
                 trial_index=trial_index,
@@ -182,8 +192,16 @@ for i in range(n_trials):
         except Exception as e:
             print(f"Trial {trial_index} failed: {e}")
             client.mark_trial_failed(trial_index=trial_index)
-            n_trials += 1
             continue
 
-pareto = client.get_pareto_frontier()
 client.save_to_json_file("experiment.json")
+exp = client._experiment
+completed = len(exp.trials_by_status.get(3, []))
+failed = len(exp.trials_by_status.get(4, []))
+print(f"Completed: {completed}, Failed: {failed}")
+try:
+    pareto = client.get_pareto_frontier()
+    print(pareto)
+except Exception as e:
+    print(f"Could not compute Pareto frontier: {e}")
+    print("Experiment saved to experiment.json.")
