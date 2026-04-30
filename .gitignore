@@ -18,3 +18,4 @@ local_test.py
 output/fitness.csv
 /docs
 individual_models/__pycache__
+/docs
