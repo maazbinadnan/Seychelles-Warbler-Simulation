@@ -147,7 +147,7 @@ client.configure_optimization(
     )
 )
 
-n_trials = 100
+n_trials = 50
 for i in range(n_trials):
     print(f'iteration: {i}')
     trials = client.get_next_trials(max_trials=1)
