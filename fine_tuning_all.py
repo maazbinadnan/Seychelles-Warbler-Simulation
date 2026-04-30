@@ -3,7 +3,7 @@ from ax.api.client import Client
 from ax.api.configs import RangeParameterConfig
 import pandas as pd
 import numpy as np
-
+import os
 #The functions between the dashed lines are to be defined
 #These functions should return the corresponding number as result, you can change arguments as how you use the function in get_result()
 #----------------------------------------------------------------------------------------------
@@ -80,9 +80,9 @@ def per_teri_hlp(df):# % percentage of territories with helper for each year (li
 
 def get_result():# this is the function generating the final output metric
     # the first 3 lines are to read the result files
-    terr = pd.read_csv('territory.csv')# read territory.csv
-    pop = pd.read_csv('population.csv')# read population.csv
-    fit = pd.read_csv('fitness.csv')# read fitness.csv
+    terr = pd.read_csv('output/territory.csv')# read territory.csv
+    pop = pd.read_csv('output/population.csv')# read population.csv
+    fit = pd.read_csv('output/fitness.csv')# read fitness.csv
     # calculate the scores, every variable should be a number score
     territory_counts = teri_counts(terr)
     mean_grp_size = mean_grp(pop, terr)

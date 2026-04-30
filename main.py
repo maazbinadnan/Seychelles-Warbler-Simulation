@@ -12,6 +12,7 @@ from kinship import Kinship
 from population import Population
 from individual_models.rule_based import ruleBasedAI
 from territory import TerritoryMap
+import json
 
 
 def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, life_history_fitness_dict=None, habitat_quality_dict=None):
