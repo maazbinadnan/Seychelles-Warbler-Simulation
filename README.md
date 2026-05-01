@@ -113,7 +113,7 @@ pip install ax-platform==1.2.4
 python fine_tuning_all.py
 ```
 
-Runs a Pareto-front multi-objective optimisation over key simulation parameters. Results are written to `pareto.txt`.
+Runs a  multi-objective Bayesian optimisation over key simulation parameters. Pareto front are written to `pareto.txt`, optimization logs are written to 'experiemnt.json', summaries are written to 'summary.json'.
 
 ---
 
