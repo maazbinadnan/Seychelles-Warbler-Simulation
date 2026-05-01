@@ -69,7 +69,8 @@ class Kinship:
                     ind_kinship = ind_kinship.loc[common_inds]
 
                     # if it has a maximum kinship of less than the minimum to living individuals
-                    if max(ind_kinship) < self.min_kinship:
+                    if len(ind_kinship) == 0 or max(ind_kinship) < self.min_kinship:
+
                         # remove the row and column of the individual
                         self.matrix.drop(columns=ind, inplace=True)
                         self.matrix.drop(index=ind, inplace=True)

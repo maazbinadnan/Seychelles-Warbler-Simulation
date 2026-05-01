@@ -1,5 +1,6 @@
 import os
 import random
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,13 +12,17 @@ import json
 
 from kinship import Kinship
 from population import Population
+
+from individual_models.utility_based import utilityBasedAI
 # from individual_models.genetic_algorithm import GeneticController as ruleBasedAI
 from individual_models.rule_based import ruleBasedAI
+from individual_models.q_learning import qLearningAI
+
 from territory import TerritoryMap
 import json
 
 
-def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, life_history_fitness_dict=None, habitat_quality_dict=None, output_path="output/"):
+def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, life_history_fitness_dict=None, habitat_quality_dict=None, epsilon = 0.3, output_path="output/"):
     # CREATE DATASETS
 
     if not os.path.exists(output_path):
@@ -54,7 +59,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
 
     # ploting years
     # the territory map will be plotted every ... years
-    plot_years = 5
+    plot_years = 100
 
     #defines the age : fitness values, aka if age is higher the fitness is lower, this is to simulate senescence. Must be between 0 and 1, with 1 being the maximum fitness. The age of 11 represents the maximum age an individual can reach, and must have a fitness of 0.0
     if age_fitness_dict is None:
@@ -79,7 +84,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
             "fledgling": 1.0,
             "primary": 1.0,  # primary higher than subordinate
             "subordinate": 1.0,  # subordinate higher than floater
-            "floater": 0.01,
+            "floater": 1.0,
         }
     # This maps the grayscale pixel colors of the provided Cousin Island map image to relative territory qualities (high, medium, low, or ocean)
     if habitat_quality_dict is None:
@@ -93,7 +98,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
     # parameters
     carrying_capacity = 300 # number of individuals 
     init_pop_size = carrying_capacity 
-    year, years = 0, 50
+    year, years = 0, 30
     init_sex_ratio = 0.5
     min_kinship = 0.1
     min_quality = 3 # minimum quality of a territory, determining the minimum carrying capacity. must be greater than 3
@@ -112,6 +117,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
     kinship = Kinship(pop, min_kinship)
     kinship.update()
 
+    
     # territory
 
     quality_map = np.tile(0.0, cousin_island.shape).astype(np.float16())
@@ -131,8 +137,9 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                            "year": 0,
                            "fitness": 0}
 
-    #declaring Rule - Based - AI
-    ruleAI = ruleBasedAI(
+    #declaring which model to use
+    '''
+    individual_ai = ruleBasedAI(
                     pop=pop,
                     territory_map=territory_map,
                     kinship=kinship,
@@ -141,6 +148,28 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                     # establish_samples = 8,
                     # base_cost= 0.8
                     )
+    '''
+    '''
+    individual_ai = utilityBasedAI(
+                    pop=pop,
+                    territory_map=territory_map,
+                    kinship=kinship,
+                    min_kinship=min_kinship,
+                    year=year,
+                    diameter=diameter,
+                    min_quality=min_quality,
+                    )
+    '''
+    individual_ai = qLearningAI(
+                    pop=pop,
+                    territory_map=territory_map,
+                    kinship=kinship,
+                    min_kinship=min_kinship,
+                    year=year,
+                    diameter=diameter,
+                    min_quality=min_quality,
+                    epsilon=epsilon
+                )
 
     #______________________________________________________________________________
 
@@ -163,19 +192,21 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
         for ind in pop.get_inds():
 
             sex = pop[ind]["sex"]
-            ruleAI._set_year(year=year)
+            individual_ai._set_year(year)
 
-            territory ,center, action = ruleAI.action(ind=ind)
+            # ruleAI._set_year(year=year)
+
+            territory ,center, action = individual_ai.action(ind)
 
             # print(f"action taken for individual: {ind} was {action} at center {center} for territory {territory}")
             if action == "disperse":
                 pop.update_life_history(ind, "floater")
 
-            elif action == "request_subordinate":   
+            elif action == "request_subordinate" and territory is not None and territory in territory_dict:   
                 territory_map.request_subordinate(ind, territory)
                 # adds the indiviudal to a list of competing individuals for a primary position in a territory
 
-            elif action == "compete_primary":
+            elif action == "compete_primary" and territory is not None and territory in territory_dict:
                 territory_map.compete_primary(ind, sex, territory)
                 # adds the indiviudal to a list of competing individuals for a primary position in a territory
 
@@ -236,7 +267,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                 # this will likely be influenced by the territory quality, current number of subordinates, and relatedness
 
                 for ind in territory_map[territory]["subordinates"]:
-                    eviction = ruleAI.evict_subordinate_male_primary(ind)
+                    eviction = individual_ai.evict_subordinate_male_primary(ind)
                     if eviction:
                         evicted_subordinates.append(ind)            
 
@@ -247,7 +278,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                 # this will likely be influenced by the territory quality, current number of subordinates, and relatedness
 
                 for ind in territory_map[territory]["subordinate_request"]:
-                    accept_subordinate = ruleAI.acccept_subordinate(ind)
+                    accept_subordinate = individual_ai.acccept_subordinate(ind)
                     if accept_subordinate:
                         new_subordinates.append(ind)
 
@@ -300,7 +331,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                 # reproducing_females must contain a list of all females in the territory who will reproduce 
 
                 for subordinate in female_subordinates:
-                    reproduce = ruleAI.acccept_subordinate_reproduction(subordinate)
+                    reproduce = individual_ai.acccept_subordinate_reproduction(subordinate)
                     if reproduce:
                         reproducing_females.append(subordinate)
 
@@ -315,12 +346,12 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                     #print(len(reproducing_females))
                     new_ind = max(pop.get_inds())+1
 
-                    sex = random.choice(("male", "female"))                
+                    offspring_sex = random.choice(("male", "female"))                
 
                     pop.add(father=primary_male, 
                             mother=female, 
                             ind=new_ind, 
-                            sex=sex, 
+                            sex=offspring_sex, 
                             fitness = 1.0, 
                             territory=territory, 
                             year = year, 
@@ -387,22 +418,27 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
         territory_fitness = []
         for ind in list(pop.get_inds()):
             if pop[ind]["life_history"] != "floater":
+                # guard if mean teritory fitness = 0
+                if mean_territory_fitness > 0:
 
-                territory = pop[ind]["territory"]
-                territory_carrying_capacity = territory_map[territory]["quality"]
-                territory_pop_size = territory_map.count_inds(territory)
-                floaters_in_territory = num_floaters * (territory_carrying_capacity / carrying_capacity)
+                    territory = pop[ind]["territory"]
+                    territory_carrying_capacity = territory_map[territory]["quality"]
+                    territory_pop_size = territory_map.count_inds(territory)
+                    floaters_in_territory = num_floaters * (territory_carrying_capacity / carrying_capacity)
 
-                # calculate local density dependent selection 
-                fitness_scaling = territory_carrying_capacity / ((territory_pop_size * mean_territory_fitness) + (floaters_in_territory * mean_floater_fitness))
+                    # calculate local density dependent selection 
+                    # guard to prevent NaN
+                    safe_floater = mean_floater_fitness if (not np.isnan(mean_floater_fitness)) else 0.0
+                    fitness_scaling = territory_carrying_capacity / ((territory_pop_size * mean_territory_fitness) + (floaters_in_territory * safe_floater))
 
-                # update fitness 
-                pop[ind]["fitness"] *= fitness_scaling
-                pop[ind]["fitness"] = min(pop[ind]["fitness"], 1.0)
-                pop[ind]["fitness"] = max(pop[ind]["fitness"], 0.0)
 
-                # append to fitness list
-                territory_fitness.append(pop[ind]["fitness"])
+                    # update fitness 
+                    pop[ind]["fitness"] *= fitness_scaling
+                    pop[ind]["fitness"] = min(pop[ind]["fitness"], 1.0)
+                    pop[ind]["fitness"] = max(pop[ind]["fitness"], 0.0)
+
+                    # append to fitness list
+                    territory_fitness.append(pop[ind]["fitness"])
 
         # update mean_territory_fitness after density dependent fitness scaling 
         mean_territory_fitness = np.mean(territory_fitness)
@@ -415,14 +451,15 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
 
         for ind in list(pop.get_inds()):
             if pop[ind]["life_history"] == "floater":
-
+                # guard to skip scaling if no floaters
+                if num_floaters > 0 and mean_floater_fitness > 0:
                 # calculate global density dependent selection 
-                fitness_scaling = (carrying_capacity - surviving_territory_inds) / (num_floaters * mean_floater_fitness)
+                    fitness_scaling = (carrying_capacity - surviving_territory_inds) / (num_floaters * mean_floater_fitness)
 
-                # update fitness 
-                pop[ind]["fitness"] *= fitness_scaling
-                pop[ind]["fitness"] = min(pop[ind]["fitness"], 1.0)
-                pop[ind]["fitness"] = max(pop[ind]["fitness"], 0.0)
+                    # update fitness 
+                    pop[ind]["fitness"] *= fitness_scaling
+                    pop[ind]["fitness"] = min(pop[ind]["fitness"], 1.0)
+                    pop[ind]["fitness"] = max(pop[ind]["fitness"], 0.0)
 
         # survival
         for ind in list(pop.get_inds()):
@@ -439,26 +476,28 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
     # RECORD DATA
 
         # plot territory map
-        # if year % plot_years == 0:
-        #
-        #     # get map
-        #     image = territory_map.territory_map.copy()
-        #
-        #     # rank data
-        #     image = rankdata(image, method="dense")
-        #
-        #     # reshape
-        #     image = image.reshape(territory_map.territory_map.shape)
-        #
-        #     # plot
-        #     plt.figure(figsize=(4,4))
-        #     plt.imshow(image, cmap=sns.color_palette("cubehelix", as_cmap=True), origin="upper", interpolation="nearest")
-        #     plt.title("year:" + str(year))
-        #     plt.savefig(os.path.join(output_path, "territory_map_year_" + str(year) + ".png"))
-        #     plt.show()
+        if year % plot_years == 0:
+
+            # get map
+            image = territory_map.territory_map.copy()
+
+            # rank data
+            image = rankdata(image, method="dense")
+
+            # reshape
+            image = image.reshape(territory_map.territory_map.shape)
+
+            # plot
+            plt.figure(figsize=(4,4))
+            plt.imshow(image, cmap=sns.color_palette("cubehelix", as_cmap=True), origin="upper", interpolation="nearest")
+            plt.title("year:" + str(year))
+            plt.savefig(os.path.join(output_path, "territory_map_year_" + str(year) + ".png"))
+            plt.close()
 
         # update kinship
         kinship.update()
+        # gets each individuals fitness from previous year to help with per year change in Q-learning reward calcs
+        prev_fitness = {ind: fitness_df.get(ind, {"fitness": 0.0})["fitness"] for ind in pop.get_inds()}
 
         # add new individuals to fitness_df
         for ind in pop.get_inds():
@@ -468,7 +507,8 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                                    "sex": pop[ind]["sex"],
                                    "year": pop[ind]["year"],
                                    "fitness": 0}
-
+        
+            
         # update new individuals
         for ind in pop.get_inds():
             if pop[ind]["life_history"] == "fledgling":
@@ -478,10 +518,59 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
 
                 for i in relatives.index:
                     fitness_df[i]["fitness"] += relatives.loc[i].copy()
+        #---------------------------------
+        # calculating q-learning reward
+        #---------------------------------
+        for ind in pop.get_inds():
+            # calculate all bonuses to reward calculations
+            # life history bonus
+            lh   = pop[ind]["life_history"]
+            base = pop[ind]["fitness"]          
 
-        # tracks mean_kinship
-        kinship_df.append({"year": year, 
-                          "mean_kinship": np.mean(kinship.matrix)})
+            lh_bonus = {
+                        "primary":     3.0,
+                        "subordinate": 1.0,
+                        "fledgling":   0.3,
+                        "floater":    -1.5,
+                    }.get(lh, 0.0)
+            # parental success bonus
+            parental_success_bonus = 0.0
+            if lh == "primary":
+                offspring_list = pop[ind].get("offspring", [])
+                for kid_id in offspring_list:
+                    if kid_id in pop.get_inds(): # If the child is still alive
+                        # Reward the parent for the child survival fitness
+                        parental_success_bonus += (pop[kid_id]["fitness"] * 0.5)
+            # sex bonus
+            ind_sex = pop[ind]["sex"]
+            sex_bonus = 1.5 if (ind_sex == "female" and lh in ("primary", "subordinate")) else 0.0
+            
+            
+            # attempt at competing bonus
+            attempt_bonus = 0.0
+            if ind in individual_ai.current_decisions:
+                _, attempted_action = individual_ai.current_decisions[ind]  # peek without popping
+                if attempted_action in ("compete_primary", "request_subordinate", "establish_territory"):
+                    attempt_bonus = 0.5
+                    
+            # change in fitness from last year 
+            kinship_delta = (fitness_df.get(ind, {"fitness": 0.0})["fitness"] - prev_fitness.get(ind, 0.0))
+            #reward calculation
+            reward = (base + 
+              lh_bonus + 
+              sex_bonus + 
+              attempt_bonus + 
+              parental_success_bonus + 
+              (0.5 * kinship_delta))
+            # updating q values
+            individual_ai.update_q_values(ind, reward)
+
+
+       
+        mean_k = float(np.mean(kinship.matrix)) if kinship.matrix.size > 0 else 0.0
+        kinship_df.append({"year": year, "mean_kinship": mean_k})
+
+        
 
         # tracks inds within the population
         for ind in pop.get_inds():
@@ -512,8 +601,16 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
             print("Population died at year", year, "with", len(pop.get_inds()), "individuals", "and", len(territory_map.territory_dict), "territories")
 
         year += 1
+    # end of episode q learning and table update
+    individual_ai.end_of_episode_update()
+    individual_ai.save_q_table()
+        
+        
+    
+           
+        
+         
 
-    print("Simulation ended!")
 
     #______________________________________________________________________________
 
@@ -551,9 +648,51 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
     print("writing territory_dict_no_distance_map.json to", output_path)
 
     # habitat quality map
-    # plt.figure(figsize=(8, 6))
-    # sns.heatmap(quality_map)
-    # plt.show()
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(quality_map)
+    plt.close()
+    
+    # calculates average inclusive fitness for all individuals 
+    mean_inclusive_fitness = np.mean([v["fitness"] for v in fitness_df.values()])
+    
+    return mean_inclusive_fitness  
+#-------------------------------------
+# Q-learning Loop
+#-------------------------------------
 
+# runs for n_episode times saving and loading current and previous q-tables respectively
+# epsilon decays
 if __name__ == "__main__":
-    run_simulation()
+    
+    n_episodes = 20
+    episode_fitness = []
+    current_epsilon = 0.3 
+
+    for episode in range(n_episodes):
+        print(f"\n=== EPISODE {episode + 1}/{n_episodes} ===")
+        mean_fitness = run_simulation(epsilon=current_epsilon)
+        episode_fitness.append(mean_fitness)
+        
+        # linear decay
+        current_epsilon = max(0.1, 0.3 - (episode * (0.2 / n_episodes)))
+        print(f"Mean inclusive fitness: {mean_fitness:.4f}, epsilon: {current_epsilon:.4f}")
+        
+
+    # Plotting per episode fitness with 10 episode rolling average 
+    window = 10
+    rolling_mean = pd.Series(episode_fitness).rolling(window=window, min_periods=1).mean()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, n_episodes + 1), episode_fitness, marker="o", linewidth=1, 
+            alpha=0.4, color="steelblue", label="Per-episode fitness")
+    plt.plot(range(1, n_episodes + 1), rolling_mean, linewidth=2.5, 
+            color="steelblue", label=f"{window}-episode rolling mean")
+    plt.axhline(y=np.mean(episode_fitness[-10:]), color="red", linestyle="--",
+                label=f"Last 10 mean: {np.mean(episode_fitness[-10:]):.3f}")
+    plt.xlabel("Episode")
+    plt.ylabel("Mean Inclusive Fitness")
+    plt.title("Inclusive Fitness per Episode — Q-Learning Agent")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("output/inclusive_fitness_per_episode.png", dpi=150)
+    plt.close()
