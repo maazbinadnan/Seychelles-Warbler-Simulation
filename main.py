@@ -662,7 +662,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
 # epsilon decays
 if __name__ == "__main__":
     
-    n_episodes = 50
+    n_episodes = 20
     episode_fitness = []
     current_epsilon = 0.3 
 
