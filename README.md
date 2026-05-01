@@ -18,6 +18,7 @@ population.py       # Population class — individual life histories and fitness
 kinship.py          # Kinship class — pairwise relatedness tracking
 territory.py        # TerritoryMap class — spatial territory allocation
 rule_based.py       # ruleBasedAI class — decision engine for all bird roles
+fine_tuning_all.py  # Parameters optimization - output pareto front into pareto.txt
 map/                # Habitat quality map (Cousin Island, greyscale PNG)
 output/             # CSV output files (fitness, population, territory)
 legacy/             # Archived original monolithic script
