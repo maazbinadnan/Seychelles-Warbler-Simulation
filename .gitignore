@@ -20,3 +20,12 @@ output/fitness.csv
 individual_models/__pycache__
 /docs
 /methodology
+/multiple_test_runs_output/1run_1
+/multiple_test_runs_output/1run_2
+/multiple_test_runs_output/1run_3
+/multiple_test_runs_output/run_1
+/multiple_test_runs_output/run_2
+/multiple_test_runs_output/run_3
+multiple_test_runs_output/plot_mean_fitness.py
+multiple_test_runs_output/plot_territory_count.py
+multiple_test_runs_output/plot_territory_stats.py

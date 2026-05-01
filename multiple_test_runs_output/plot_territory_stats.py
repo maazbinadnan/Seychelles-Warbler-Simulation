@@ -7,9 +7,9 @@ import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_FILES = {
-    "num_subordinates": BASE_DIR / "territory_subordinates_by_year.png",
-    "size": BASE_DIR / "territory_size_by_year.png",
-    "num_fledglings": BASE_DIR / "territory_fledglings_by_year.png",
+    "num_subordinates": BASE_DIR / "territory_subordinates_by_year_rulebased.png",
+    "size": BASE_DIR / "territory_size_by_year_rulebased.png",
+    "num_fledglings": BASE_DIR / "territory_fledglings_by_year_rulebased.png",
 }
 
 
@@ -18,9 +18,9 @@ def discover_runs() -> list[Path]:
     for path in BASE_DIR.iterdir():
         if not path.is_dir():
             continue
-        if not re.fullmatch(r"run_\d+", path.name):
+        if not re.fullmatch(r"1run_\d+", path.name):
             continue
-        if (path / "territory.csv").exists():
+        if (path / "fitness.csv").exists():
             runs.append(path)
     return sorted(runs, key=lambda path: int(path.name.split("_")[1]))
 
@@ -43,14 +43,15 @@ def main() -> None:
 
     for metric, title, output_path in plot_specs:
         plt.figure(figsize=(9, 5))
-
+        i=0
         for run_path in runs:
+            i+=1
             yearly_means = load_territory_means(run_path / "territory.csv")
             plt.plot(
                 yearly_means["year"],
                 yearly_means[metric],
                 marker="o",
-                label=run_path.name,
+                label=f"Run {i}",
             )
 
         plt.title(f"{title} per Year Across Runs")

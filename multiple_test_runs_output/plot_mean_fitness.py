@@ -6,7 +6,7 @@ import pandas as pd
 
 
 BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_PATH = BASE_DIR / "mean_fitness_comparison.png"
+OUTPUT_PATH = BASE_DIR / "mean_fitness_comparison_ruleBased.png"
 
 
 def discover_runs() -> list[Path]:
@@ -14,7 +14,7 @@ def discover_runs() -> list[Path]:
     for path in BASE_DIR.iterdir():
         if not path.is_dir():
             continue
-        if not re.fullmatch(r"run_\d+", path.name):
+        if not re.fullmatch(r"1run_\d+", path.name):
             continue
         if (path / "fitness.csv").exists():
             runs.append(path)
@@ -33,9 +33,11 @@ def main() -> None:
 
     plt.figure(figsize=(9, 5))
 
+    i = 0
     for run_path in runs:
+        i += 1
         mean_by_year = load_mean_fitness(run_path / "fitness.csv")
-        plt.plot(mean_by_year["year"], mean_by_year["fitness"], marker="o", label=run_path.name)
+        plt.plot(mean_by_year["year"], mean_by_year["fitness"], marker="o", label=f"Run {i}")
 
     plt.title("Mean Fitness per Year Across Runs")
     plt.xlabel("Year")
