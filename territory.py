@@ -179,8 +179,8 @@ class TerritoryMap:
         # if a new primary is chosen
         if new_primary is not None:
             # update life history and territory of individual
-            # primary_key = "primary_female" if sex == "female" else "primary_male"
-            # self.territory_dict[territory][primary_key] = new_primary
+            primary_key = "primary_female" if sex == "female" else "primary_male"
+            self.territory_dict[territory][primary_key] = new_primary
             self.pop.update_life_history(new_primary, "primary", territory)
 
     def count_inds(self, territory):

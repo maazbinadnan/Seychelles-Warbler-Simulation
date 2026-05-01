@@ -2,6 +2,16 @@ import numpy as np
 
 class utilityBasedAI():
     def __init__(self, pop, territory_map, kinship, min_kinship, year, diameter, min_quality):
+        """
+        Args:
+            pop: Population object containing all living individuals.
+            territory_map: TerritoryMap object containing all territories.
+            kinship: Kinship object for calculating pairwise relatedness.
+            min_kinship: Minimum relatedness threshold for kin-based tolerance.
+            year: The current year of the simulation.
+            diameter: Maximum territory diameter parameter.
+            min_quality: Minimum territory quality threshold.
+        """
         self.pop = pop
         self.territory_map = territory_map
         self.kinship = kinship
@@ -10,17 +20,23 @@ class utilityBasedAI():
         self.diameter = diameter
         self.min_quality = min_quality
     
+    #----------------------------------------
+    # Helper functions
+    #----------------------------------------
+    
+    # returns age of an individual
     def _get_age(self, ind):
         if "age" in self.pop[ind]:
             return self.pop[ind]["age"]
         return self.year - self.pop[ind]["year"]
     
+    #  returns random coordinate from habitat quality map
     def _random_center(self):
         return (
             np.random.randint(0, self.territory_map.habitat_quality.shape[0]),
             np.random.randint(0, self.territory_map.habitat_quality.shape[1])
         )
-    
+    # returns the summed habitat quality around a coordinate
     def _local_quality(self, center, radius):
         x, y = center
         x_min = max(0, x - radius)
@@ -33,9 +49,11 @@ class utilityBasedAI():
             return 0.0
         return float(np.sum(patch))
     
+    # returns true if quality is twice the minimum threshold
     def _is_high_quality(self, quality):
         return quality >= (self.min_quality * 2.0)
     
+    # returns the relatedness to the primary female of a territory
     def _relatedness_to_primary_female(self, ind, territory):
         territories = self.territory_map.get_territories()
         primary_female = territories[territory]["primary_female"]
@@ -48,10 +66,7 @@ class utilityBasedAI():
         except Exception:
             return float(self.kinship.matrix.loc[ind, primary_female])
         
-    def set_year(self, year):
-        self.year = year
-        
-    
+    # returns territory quality
     def _territory_quality(self, territory_id):
         territories = self.territory_map.get_territories()
         if territory_id not in territories:
@@ -64,6 +79,11 @@ class utilityBasedAI():
         center = territories[territory_id]["center"]
         return self._local_quality(center, radius=max(1, self.diameter // 4))
     
+    #----------------------------------------
+    # Decision Functions
+    #----------------------------------------
+    
+    # decisions for fletchling comparing utility of remaining to dispersing
     def _decide_fledgling(self, ind, natal_territory, fallback_center):
         if natal_territory not in self.territory_map.get_territories():
             return "disperse", None, fallback_center
@@ -85,19 +105,23 @@ class utilityBasedAI():
             return "request_subordinate", natal_territory, fallback_center
         return "disperse", None, fallback_center
 
-    
-    def _decide_subordinate(self,ind,territory,sex,age,fallback_center):
-        
+    # decides action for subordinate if primary vacancy for same sex then individual competes
+    # if not it stays as a helper
+    def _decide_subordinate(self, ind, territory, sex, age, fallback_center):
         territories = self.territory_map.get_territories()
-        
         if territory not in territories:
             return "disperse", None, fallback_center
 
-        
-        return "compete_primary", territory, fallback_center
+        vacancy_key = "primary_female" if sex == "female" else "primary_male"
+        if territories[territory][vacancy_key] is None:
+            return "compete_primary", territory, fallback_center
+
+        return "nothing", territory, fallback_center
 
         
-        
+    # decisions for floater by comparing utility for competing for primary,
+    # requesting subordinate, establishing new territory or doing nothing
+    # chooses highest utility    
     def _decide_floater(self, ind, territory, sex, age, fallback_center):
         compete_primary_utility = 0
         vacancy_key = "primary_male" if sex == "male" else "primary_female"
@@ -105,7 +129,7 @@ class utilityBasedAI():
         best_vacant_quality = -1
         kinship_quality_ratio = []
 
-        # --- Loop 1: find vacant territories for compete_primary ---
+        # find vacant territories
         vacant_ids = []
         vacant_qualities = []
         for t_id, t_info in self.territory_map.get_territories().items():
@@ -113,14 +137,14 @@ class utilityBasedAI():
                 q = t_info["quality"] if t_info["quality"] is not None else 0.0
                 vacant_ids.append(t_id)
                 vacant_qualities.append(q)
-
+        # sample a vacant territory weighted by quality 
         if len(vacant_ids) > 0:
             weights = np.array(vacant_qualities, dtype=float)
             weights = weights / weights.sum() if weights.sum() > 0 else np.ones(len(vacant_ids)) / len(vacant_ids)
             best_vacant_territory = np.random.choice(vacant_ids, p=weights)
             best_vacant_quality = self._territory_quality(best_vacant_territory)
 
-        # --- Loop 2: calculate kinship-quality ratios for request_subordinate ---
+        # calculate kinship-quality ratios
         for t_id, t_info in self.territory_map.get_territories().items():
             request_quality = t_info["quality"] if t_info["quality"] is not None else 0.0
             kinship = self._relatedness_to_primary_female(ind, t_id)
@@ -132,14 +156,15 @@ class utilityBasedAI():
             best_kq_ratio = -1
             territory_request_subordinate = None
 
+        # compete primary utility calculation
         if best_vacant_territory is not None:
-            compete_primary_utility = best_vacant_quality * 0.5 * 0.5
+            compete_primary_utility = best_vacant_quality * 0.5 * 0.5 # 0.5 from competition uncertainty and 0.5 from contested value
         else:
             compete_primary_utility = -1
 
         request_subordinate_utility = best_kq_ratio
 
-        # --- Establish territory (males only) ---
+        #  Establish territory for males only
         if sex == "male":
             best_establish_quality = -1
             best_establish_center = None
@@ -152,13 +177,14 @@ class utilityBasedAI():
                 if result["quality"] > best_establish_quality:
                     best_establish_quality = result["quality"]
                     best_establish_center = candidate
-            establish_territory_utility = best_establish_quality * 0.5
+            establish_territory_utility = best_establish_quality * 0.5 # 0.5 is uncertainty and resource cost of establishing territory
         else:
             establish_territory_utility = -1
             best_establish_center = None
 
         nothing_utility = 0.01
 
+        # picks highest utility
         best_utility = max(
             compete_primary_utility,
             request_subordinate_utility,
@@ -176,7 +202,7 @@ class utilityBasedAI():
             return "nothing", None, fallback_center
 
 
-
+    # main decision function
     def decide(self, ind):
         life_history = self.pop[ind]["life_history"]
         sex = self.pop[ind]["sex"]
@@ -264,14 +290,21 @@ class utilityBasedAI():
         male_allows = is_rich
 
         return male_allows, female_allows
-
+    #--------------------------------------
+    # Interface Wrappers
+    #--------------------------------------
+    
+    
+    # update year
     def _set_year(self, year):
         self.year = year
 
+    # returns action chosen
     def action(self, ind):
         action, territory, center = self.decide(ind)
         return territory, center, action
 
+    # evict decision returns true if primary evicts
     def evict_subordinate_male_primary(self, ind):
         territory = self.pop[ind]["territory"]
         territories = self.territory_map.get_territories()
@@ -284,7 +317,7 @@ class utilityBasedAI():
             primary_male, primary_female, ind, territory
         )
         return male_evicts or female_evicts
-
+    # accept suboridinate if primary accepts
     def acccept_subordinate(self, ind):
         territory = self.pop[ind]["territory"]
         territories = self.territory_map.get_territories()
@@ -297,7 +330,7 @@ class utilityBasedAI():
             primary_male, primary_female, ind, territory
         )
         return male_accepts and female_accepts
-
+    # accept reproduction if both primaries accept
     def acccept_subordinate_reproduction(self, ind):
         territory = self.pop[ind]["territory"]
         territories = self.territory_map.get_territories()
