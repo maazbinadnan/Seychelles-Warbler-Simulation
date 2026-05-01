@@ -32,7 +32,6 @@ multiple_test_runs_output/
     plot_territory_stats.py  # Plot territory quality statistics across runs
     run_1/ run_2/ run_3/     # Per-run CSV output
 legacy/                  # Archived original monolithic script
-docs/                    # Detailed per-module documentation
 ```
 
 ---
