@@ -14,7 +14,7 @@ from kinship import Kinship
 from population import Population
 
 from individual_models.utility_based import utilityBasedAI
-# from individual_models.genetic_algorithm import GeneticController as ruleBasedAI
+from individual_models.genetic_algorithm import GeneticController
 from individual_models.rule_based import ruleBasedAI
 from individual_models.q_learning import qLearningAI
 
@@ -170,6 +170,16 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                     min_quality=min_quality,
                     epsilon=epsilon
                 )
+    '''
+    individual_ai = GeneticController(
+                    pop = pop,
+                    territory_map = territory_map,
+                    kinship = kinship,
+                    start_year = year,
+                    min_kinship = min_kinship,
+                    establish_samples = 8,
+                    base_cost = 0.8)
+    '''
 
     #______________________________________________________________________________
 

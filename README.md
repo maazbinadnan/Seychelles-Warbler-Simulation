@@ -1,6 +1,6 @@
 # Seychelles Warbler Simulation
 
-An agent-based simulation of cooperative breeding dynamics in the Seychelles Warbler (*Acrocephalus sechellensis*), built for SCC-452. The model investigates kin selection, territory quality, and the evolution of subordinate helping behaviour using a rule-based AI decision engine.
+An agent-based simulation of cooperative breeding dynamics in the Seychelles Warbler (*Acrocephalus sechellensis*), built for SCC-452. The model investigates kin selection, territory quality, and the evolution of subordinate helping behaviour across four interchangeable AI decision engines.
 
 ---
 
@@ -13,60 +13,133 @@ The simulation models individual birds across a spatial habitat map (Cousin Isla
 ## Project Structure
 
 ```
-main.py             # Simulation entry point — runs the full loop
-population.py       # Population class — individual life histories and fitness
-kinship.py          # Kinship class — pairwise relatedness tracking
-territory.py        # TerritoryMap class — spatial territory allocation
-rule_based.py       # ruleBasedAI class — decision engine for all bird roles
-fine_tuning_all.py  # Parameters optimization - output pareto front into pareto.txt
-map/                # Habitat quality map (Cousin Island, greyscale PNG)
-output/             # CSV output files (fitness, population, territory)
-legacy/             # Archived original monolithic script
+main.py                  # Simulation entry point — runs the full loop
+population.py            # Population class — individual life histories and fitness
+kinship.py               # Kinship class — pairwise relatedness tracking
+territory.py             # TerritoryMap class — spatial territory allocation
+multiple_test_runs.py    # Runs the simulation N times and saves each to its own folder
+fine_tuning_all.py       # Pareto-front parameter optimisation (requires ax-platform)
+individual_models/
+    rule_based.py        # ruleBasedAI — deterministic decision engine
+    utility_based.py     # utilityBasedAI — utility-function decision engine
+    genetic_algorithm.py # GeneticController — evolved decision weights (active default)
+    q_learning.py        # qLearningAI — reinforcement-learning decision engine
+map/                     # Habitat quality map (Cousin Island, greyscale PNG + CSV)
+output/                  # CSV output files from the most recent single run
+multiple_test_runs_output/
+    plot_mean_fitness.py     # Plot mean fitness across runs
+    plot_territory_count.py  # Plot territory count across runs
+    plot_territory_stats.py  # Plot territory quality statistics across runs
+    run_1/ run_2/ run_3/     # Per-run CSV output
+legacy/                  # Archived original monolithic script
+docs/                    # Detailed per-module documentation
 ```
 
 ---
 
-## Key Parameters
+## Setup
 
-| Parameter | Default | Description |
-|---|---|---|
-| `carrying_capacity` | 300 | Maximum population size |
-| `years` | 10 | Simulation length |
-| `min_kinship` | 0.1 | Minimum relatedness for kin-based tolerance |
-| `min_quality` | 3 | Minimum territory quality to be viable |
-| `diameter` | 20 | Maximum territory diameter (pixels) |
-| `subordinate_benefit` | 0.2 | Fitness multiplier per subordinate helper |
+**Requirements:** Python 3.10+
 
----
+```bash
+# 1. Create and activate a virtual environment (Windows)
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 
-## Decision Rules (ruleBasedAI)
+# 2. Install dependencies
+pip install -r requirements.txt
+```
 
-- **Fledgling**: females remain on high-quality territories; males disperse with moderate probability.
-- **Subordinate**: leaves if unrelated to primary female, if old (age ≥ 8), or if a vacancy arises to challenge.
-- **Floater**: competes for vacancies, attempts to establish new territories, or requests subordinate status.
-- **Primary (evict)**: female evicts unrelated subordinates; male evicts on poor territories with multiple helpers.
-- **Primary (accept)**: female accepts related candidates; male accepts related or high-quality territory candidates.
-- **Primary (reproduction)**: subordinate female may only reproduce on high-quality territories and if related to the primary female.
+> `ax-platform` is **not** installed by default. It is only needed for `fine_tuning_all.py`.
+> To use it: `pip install ax-platform==1.2.4`
 
 ---
 
 ## Running the Simulation
 
-```bash
-# Activate the virtual environment (Windows)
-.venv\Scripts\Activate.ps1
+### Single run
 
-# Run
+```bash
 python main.py
 ```
 
-Output CSVs are written to `output/`. Territory maps are plotted every 5 years.
+Output CSVs are written to `output/`:
+
+| File | Contents |
+|---|---|
+| `fitness.csv` | Per-individual fitness scores by year |
+| `population.csv` | Life-history state of every individual each year |
+| `territory.csv` | Territory size and quality metrics by year |
+| `territory_dict_no_distance_map.json` | Full territory state snapshot |
+
+Territory maps are also rendered and displayed as plots during the run (every 100 years by default).
+
+---
+
+### Multiple runs
+
+```bash
+python multiple_test_runs.py
+```
+
+Runs the simulation 3 times and saves each run to `multiple_test_runs_output/run_<n>/`. To change the number of runs, edit `RUN_COUNT` at the top of `multiple_test_runs.py`.
+
+After the runs complete, generate plots from inside `multiple_test_runs_output/`:
+
+```bash
+python plot_mean_fitness.py
+python plot_territory_count.py
+python plot_territory_stats.py
+```
+
+---
+
+### Switching the AI model
+
+Open `main.py` and locate the model block (~line 160). Only one model should be active at a time — uncomment the one you want and comment out the others:
+
+| Model | Class | Notes |
+|---|---|---|
+| Genetic Algorithm | `GeneticController` | **Active by default** |
+| Rule-Based | `ruleBasedAI` | Deterministic decision rules |
+| Utility-Based | `utilityBasedAI` | Weighted utility scoring |
+| Q-Learning | `qLearningAI` | RL agent; `epsilon` controls exploration |
+
+---
+
+### Parameter optimisation (optional)
+
+```bash
+pip install ax-platform==1.2.4
+python fine_tuning_all.py
+```
+
+Runs a Pareto-front multi-objective optimisation over key simulation parameters. Results are written to `pareto.txt`.
+
+---
+
+## Key Parameters (`main.py` → `run_simulation`)
+
+| Parameter | Default | Description |
+|---|---|---|
+| `carrying_capacity` | 300 | Maximum population size |
+| `years` | 30 | Simulation length (years) |
+| `min_kinship` | 0.1 | Minimum relatedness for kin-based tolerance |
+| `min_quality` | 3 | Minimum territory quality to be viable |
+| `diameter` | 20 | Maximum territory diameter (pixels) |
+| `subordinate_benefit` | 0.2 | Fitness multiplier per subordinate helper |
+| `epsilon` | 0.3 | Exploration rate (Q-Learning only) |
 
 ---
 
 ## Dependencies
 
-- Python 3
-- `numpy`, `pandas`, `scipy`
-- `matplotlib`, `seaborn`
-- `Pillow`
+| Package | Version | Purpose |
+|---|---|---|
+| `numpy` | 2.4.4 | Numerical arrays and map operations |
+| `pandas` | 3.0.2 | CSV output and data analysis |
+| `scipy` | 1.17.1 | Rank-based fitness scoring |
+| `matplotlib` | 3.10.8 | Territory and fitness plotting |
+| `seaborn` | 0.13.2 | Statistical plots |
+| `Pillow` | 12.2.0 | Loading the habitat quality map image |
+| `ax-platform` | 1.2.4 | Pareto optimisation *(optional)* |
