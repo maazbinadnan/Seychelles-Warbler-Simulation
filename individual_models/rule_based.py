@@ -40,7 +40,6 @@ class ruleBasedAI():
         Subordinate: only consider their own territory.
         Floater: scan all territories, pick the one with the least competition.'''
 
-
         primary_key = "primary_female" if sex == "female" else "primary_male"
         competition_key = "primary_female_competition" if sex == "female" else "primary_male_competition"
         territories = self.territory_map.get_territories()
@@ -154,7 +153,7 @@ class ruleBasedAI():
                     random_territory = np.random.choice(list(territories.keys()))
                     return random_territory, (-1,-1), "request_subordinate"
 
-            if sex == "male":
+            elif sex == "male":
                 territory_id = self._find_primary_vacancy(ind, sex="male", life_history="floater")
                 if territory_id is not None:
                     return territory_id, (-1,-1), "compete_primary"
