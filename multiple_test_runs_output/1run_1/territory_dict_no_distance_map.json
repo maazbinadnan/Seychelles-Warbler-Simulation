@@ -1,0 +1,1482 @@
+{
+  "1": {
+    "primary_male": 4680,
+    "primary_male_competition": [
+      4680,
+      4782,
+      4834
+    ],
+    "primary_female": 4157,
+    "primary_female_competition": [],
+    "center": [
+      39,
+      27
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4941
+    ],
+    "size": 89,
+    "quality": 3.46484375
+  },
+  "2": {
+    "primary_male": 4682,
+    "primary_male_competition": [
+      4682,
+      4783,
+      4835
+    ],
+    "primary_female": 4127,
+    "primary_female_competition": [],
+    "center": [
+      7,
+      93
+    ],
+    "subordinates": [],
+    "subordinate_request": [
+      4856
+    ],
+    "fledglings": [
+      4942
+    ],
+    "size": 155,
+    "quality": 4.12890625
+  },
+  "3": {
+    "primary_male": 4206,
+    "primary_male_competition": [],
+    "primary_female": 4565,
+    "primary_female_competition": [
+      4260,
+      4565,
+      4737,
+      4814
+    ],
+    "center": [
+      75,
+      33
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4943
+    ],
+    "size": 82,
+    "quality": 3.193359375
+  },
+  "5": {
+    "primary_male": 4313,
+    "primary_male_competition": [],
+    "primary_female": 4498,
+    "primary_female_competition": [],
+    "center": [
+      51,
+      13
+    ],
+    "subordinates": [
+      4777,
+      4858,
+      4859
+    ],
+    "subordinate_request": [
+      4858,
+      4859
+    ],
+    "fledglings": [
+      4944,
+      4945,
+      4946
+    ],
+    "size": 114,
+    "quality": 4.359375
+  },
+  "7": {
+    "primary_male": 4707,
+    "primary_male_competition": [
+      4707,
+      4791,
+      4839
+    ],
+    "primary_female": 4417,
+    "primary_female_competition": [],
+    "center": [
+      49,
+      33
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4947
+    ],
+    "size": 91,
+    "quality": 3.54296875
+  },
+  "8": {
+    "primary_male": 4444,
+    "primary_male_competition": [],
+    "primary_female": 4431,
+    "primary_female_competition": [],
+    "center": [
+      91,
+      34
+    ],
+    "subordinates": [
+      4861
+    ],
+    "subordinate_request": [
+      4861
+    ],
+    "fledglings": [
+      4948,
+      4949
+    ],
+    "size": 96,
+    "quality": 3.73828125
+  },
+  "13": {
+    "primary_male": 4714,
+    "primary_male_competition": [
+      4714,
+      4793,
+      4840
+    ],
+    "primary_female": 4142,
+    "primary_female_competition": [],
+    "center": [
+      60,
+      25
+    ],
+    "subordinates": [],
+    "subordinate_request": [
+      4862
+    ],
+    "fledglings": [
+      4950
+    ],
+    "size": 102,
+    "quality": 3.97265625
+  },
+  "14": {
+    "primary_male": 4213,
+    "primary_male_competition": [],
+    "primary_female": 4212,
+    "primary_female_competition": [],
+    "center": [
+      34,
+      47
+    ],
+    "subordinates": [
+      4685,
+      4863
+    ],
+    "subordinate_request": [
+      4863
+    ],
+    "fledglings": [
+      4951,
+      4952
+    ],
+    "size": 96,
+    "quality": 4.9765625
+  },
+  "15": {
+    "primary_male": 4516,
+    "primary_male_competition": [],
+    "primary_female": 4446,
+    "primary_female_competition": [],
+    "center": [
+      56,
+      74
+    ],
+    "subordinates": [
+      4126
+    ],
+    "subordinate_request": [],
+    "fledglings": [
+      4953
+    ],
+    "size": 104,
+    "quality": 4.5625
+  },
+  "16": {
+    "primary_male": 4215,
+    "primary_male_competition": [],
+    "primary_female": 4743,
+    "primary_female_competition": [
+      4325,
+      4632,
+      4743,
+      4784
+    ],
+    "center": [
+      80,
+      44
+    ],
+    "subordinates": [
+      4784,
+      4865,
+      4866
+    ],
+    "subordinate_request": [
+      4865,
+      4866
+    ],
+    "fledglings": [
+      4954,
+      4955,
+      4956
+    ],
+    "size": 116,
+    "quality": 4.515625
+  },
+  "17": {
+    "primary_male": 4717,
+    "primary_male_competition": [
+      4717,
+      4794,
+      4843
+    ],
+    "primary_female": 4585,
+    "primary_female_competition": [],
+    "center": [
+      42,
+      64
+    ],
+    "subordinates": [],
+    "subordinate_request": [
+      4867
+    ],
+    "fledglings": [
+      4957
+    ],
+    "size": 81,
+    "quality": 4.3515625
+  },
+  "19": {
+    "primary_male": 4445,
+    "primary_male_competition": [],
+    "primary_female": 4294,
+    "primary_female_competition": [],
+    "center": [
+      65,
+      78
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4958
+    ],
+    "size": 85,
+    "quality": 3.41015625
+  },
+  "20": {
+    "primary_male": 4623,
+    "primary_male_competition": [],
+    "primary_female": 4418,
+    "primary_female_competition": [],
+    "center": [
+      7,
+      56
+    ],
+    "subordinates": [
+      4869
+    ],
+    "subordinate_request": [
+      4869
+    ],
+    "fledglings": [
+      4959,
+      4960
+    ],
+    "size": 130,
+    "quality": 4.06640625
+  },
+  "21": {
+    "primary_male": 4522,
+    "primary_male_competition": [],
+    "primary_female": 4607,
+    "primary_female_competition": [],
+    "center": [
+      28,
+      49
+    ],
+    "subordinates": [
+      4870
+    ],
+    "subordinate_request": [
+      4870
+    ],
+    "fledglings": [
+      4961,
+      4962
+    ],
+    "size": 75,
+    "quality": 3.69921875
+  },
+  "22": {
+    "primary_male": 4633,
+    "primary_male_competition": [],
+    "primary_female": 4451,
+    "primary_female_competition": [],
+    "center": [
+      102,
+      43
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4963
+    ],
+    "size": 107,
+    "quality": 4.01171875
+  },
+  "24": {
+    "primary_male": 4525,
+    "primary_male_competition": [],
+    "primary_female": 4610,
+    "primary_female_competition": [],
+    "center": [
+      26,
+      30
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4964
+    ],
+    "size": 162,
+    "quality": 5.92578125
+  },
+  "25": {
+    "primary_male": 4639,
+    "primary_male_competition": [],
+    "primary_female": 4234,
+    "primary_female_competition": [],
+    "center": [
+      57,
+      18
+    ],
+    "subordinates": [
+      4873
+    ],
+    "subordinate_request": [
+      4873
+    ],
+    "fledglings": [
+      4965,
+      4966
+    ],
+    "size": 98,
+    "quality": 3.81640625
+  },
+  "27": {
+    "primary_male": 4261,
+    "primary_male_competition": [],
+    "primary_female": 4320,
+    "primary_female_competition": [],
+    "center": [
+      69,
+      49
+    ],
+    "subordinates": [
+      4874
+    ],
+    "subordinate_request": [
+      4874
+    ],
+    "fledglings": [
+      4967,
+      4968
+    ],
+    "size": 104,
+    "quality": 4.05078125
+  },
+  "28": {
+    "primary_male": 4315,
+    "primary_male_competition": [],
+    "primary_female": 4613,
+    "primary_female_competition": [],
+    "center": [
+      52,
+      92
+    ],
+    "subordinates": [
+      4797
+    ],
+    "subordinate_request": [],
+    "fledglings": [
+      4969
+    ],
+    "size": 143,
+    "quality": 4.32421875
+  },
+  "29": {
+    "primary_male": 4728,
+    "primary_male_competition": [
+      4728,
+      4795,
+      4846
+    ],
+    "primary_female": 4465,
+    "primary_female_competition": [],
+    "center": [
+      34,
+      19
+    ],
+    "subordinates": [
+      4702,
+      4799
+    ],
+    "subordinate_request": [],
+    "fledglings": [
+      4970
+    ],
+    "size": 166,
+    "quality": 5.296875
+  },
+  "30": {
+    "primary_male": 4534,
+    "primary_male_competition": [],
+    "primary_female": 4052,
+    "primary_female_competition": [],
+    "center": [
+      33,
+      86
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4971
+    ],
+    "size": 82,
+    "quality": 3.69140625
+  },
+  "32": {
+    "primary_male": 4740,
+    "primary_male_competition": [
+      4740,
+      4806,
+      4853
+    ],
+    "primary_female": 4523,
+    "primary_female_competition": [],
+    "center": [
+      65,
+      55
+    ],
+    "subordinates": [
+      4801
+    ],
+    "subordinate_request": [
+      4880,
+      4881
+    ],
+    "fledglings": [
+      4972
+    ],
+    "size": 101,
+    "quality": 3.93359375
+  },
+  "33": {
+    "primary_male": 4640,
+    "primary_male_competition": [],
+    "primary_female": 4617,
+    "primary_female_competition": [],
+    "center": [
+      14,
+      40
+    ],
+    "subordinates": [
+      4618
+    ],
+    "subordinate_request": [],
+    "fledglings": [
+      4973
+    ],
+    "size": 163,
+    "quality": 4.546875
+  },
+  "35": {
+    "primary_male": 4559,
+    "primary_male_competition": [],
+    "primary_female": 4134,
+    "primary_female_competition": [],
+    "center": [
+      42,
+      33
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4974
+    ],
+    "size": 98,
+    "quality": 3.98046875
+  },
+  "36": {
+    "primary_male": 4270,
+    "primary_male_competition": [],
+    "primary_female": 4149,
+    "primary_female_competition": [],
+    "center": [
+      20,
+      49
+    ],
+    "subordinates": [
+      4621
+    ],
+    "subordinate_request": [
+      4884
+    ],
+    "fledglings": [
+      4975
+    ],
+    "size": 83,
+    "quality": 3.82421875
+  },
+  "37": {
+    "primary_male": 4645,
+    "primary_male_competition": [],
+    "primary_female": 4529,
+    "primary_female_competition": [],
+    "center": [
+      56,
+      36
+    ],
+    "subordinates": [
+      4885
+    ],
+    "subordinate_request": [
+      4885
+    ],
+    "fledglings": [
+      4976,
+      4977
+    ],
+    "size": 102,
+    "quality": 4.01171875
+  },
+  "39": {
+    "primary_male": 4561,
+    "primary_male_competition": [],
+    "primary_female": 4438,
+    "primary_female_competition": [],
+    "center": [
+      25,
+      71
+    ],
+    "subordinates": [
+      4886
+    ],
+    "subordinate_request": [
+      4886
+    ],
+    "fledglings": [
+      4978,
+      4979
+    ],
+    "size": 95,
+    "quality": 5.1171875
+  },
+  "41": {
+    "primary_male": 4146,
+    "primary_male_competition": [],
+    "primary_female": 4439,
+    "primary_female_competition": [],
+    "center": [
+      59,
+      44
+    ],
+    "subordinates": [
+      4347,
+      4887
+    ],
+    "subordinate_request": [
+      4887
+    ],
+    "fledglings": [
+      4980,
+      4981
+    ],
+    "size": 127,
+    "quality": 5.015625
+  },
+  "44": {
+    "primary_male": 4452,
+    "primary_male_competition": [],
+    "primary_female": 4442,
+    "primary_female_competition": [],
+    "center": [
+      25,
+      37
+    ],
+    "subordinates": [
+      4888
+    ],
+    "subordinate_request": [
+      4888
+    ],
+    "fledglings": [
+      4982,
+      4983
+    ],
+    "size": 119,
+    "quality": 4.8671875
+  },
+  "46": {
+    "primary_male": 4563,
+    "primary_male_competition": [],
+    "primary_female": 4443,
+    "primary_female_competition": [],
+    "center": [
+      84,
+      59
+    ],
+    "subordinates": [
+      4809,
+      4889,
+      4890
+    ],
+    "subordinate_request": [
+      4889,
+      4890
+    ],
+    "fledglings": [
+      4984,
+      4985,
+      4986
+    ],
+    "size": 149,
+    "quality": 4.9453125
+  },
+  "48": {
+    "primary_male": 4584,
+    "primary_male_competition": [],
+    "primary_female": 4256,
+    "primary_female_competition": [],
+    "center": [
+      45,
+      42
+    ],
+    "subordinates": [
+      4810
+    ],
+    "subordinate_request": [],
+    "fledglings": [
+      4987
+    ],
+    "size": 103,
+    "quality": 4.6484375
+  },
+  "49": {
+    "primary_male": 4653,
+    "primary_male_competition": [],
+    "primary_female": 4471,
+    "primary_female_competition": [],
+    "center": [
+      45,
+      20
+    ],
+    "subordinates": [],
+    "subordinate_request": [
+      4893
+    ],
+    "fledglings": [
+      4988
+    ],
+    "size": 112,
+    "quality": 4.359375
+  },
+  "50": {
+    "primary_male": 4356,
+    "primary_male_competition": [],
+    "primary_female": 4434,
+    "primary_female_competition": [],
+    "center": [
+      91,
+      48
+    ],
+    "subordinates": [
+      4724
+    ],
+    "subordinate_request": [],
+    "fledglings": [
+      4989
+    ],
+    "size": 159,
+    "quality": 5.4921875
+  },
+  "51": {
+    "primary_male": 4586,
+    "primary_male_competition": [],
+    "primary_female": 4718,
+    "primary_female_competition": [],
+    "center": [
+      60,
+      64
+    ],
+    "subordinates": [
+      4895
+    ],
+    "subordinate_request": [
+      4895
+    ],
+    "fledglings": [
+      4990,
+      4991
+    ],
+    "size": 88,
+    "quality": 3.42578125
+  },
+  "52": {
+    "primary_male": 4464,
+    "primary_male_competition": [],
+    "primary_female": 4635,
+    "primary_female_competition": [],
+    "center": [
+      81,
+      52
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4992
+    ],
+    "size": 92,
+    "quality": 3.58203125
+  },
+  "53": {
+    "primary_male": 4466,
+    "primary_male_competition": [],
+    "primary_female": 4847,
+    "primary_female_competition": [
+      4441,
+      4666,
+      4750,
+      4847
+    ],
+    "center": [
+      70,
+      69
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4993
+    ],
+    "size": 87,
+    "quality": 3.388671875
+  },
+  "54": {
+    "primary_male": 4741,
+    "primary_male_competition": [
+      4741,
+      4808
+    ],
+    "primary_female": 4638,
+    "primary_female_competition": [
+      4500,
+      4638,
+      4789,
+      4849
+    ],
+    "center": [
+      53,
+      59
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4994
+    ],
+    "size": 91,
+    "quality": 3.74609375
+  },
+  "55": {
+    "primary_male": 4272,
+    "primary_male_competition": [],
+    "primary_female": 4850,
+    "primary_female_competition": [
+      4362,
+      4681,
+      4800,
+      4850
+    ],
+    "center": [
+      33,
+      66
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      4995
+    ],
+    "size": 80,
+    "quality": 4.359375
+  },
+  "56": {
+    "primary_male": 4475,
+    "primary_male_competition": [],
+    "primary_female": 4167,
+    "primary_female_competition": [],
+    "center": [
+      71,
+      62
+    ],
+    "subordinates": [
+      4900
+    ],
+    "subordinate_request": [
+      4900
+    ],
+    "fledglings": [
+      4996,
+      4997
+    ],
+    "size": 110,
+    "quality": 4.28515625
+  },
+  "58": {
+    "primary_male": 4489,
+    "primary_male_competition": [],
+    "primary_female": 4080,
+    "primary_female_competition": [],
+    "center": [
+      48,
+      50
+    ],
+    "subordinates": [
+      4820,
+      4902
+    ],
+    "subordinate_request": [
+      4902
+    ],
+    "fledglings": [
+      4998,
+      4999
+    ],
+    "size": 97,
+    "quality": 4.578125
+  },
+  "59": {
+    "primary_male": 4395,
+    "primary_male_competition": [],
+    "primary_female": 4365,
+    "primary_female_competition": [],
+    "center": [
+      11,
+      81
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5000
+    ],
+    "size": 76,
+    "quality": 3.41015625
+  },
+  "60": {
+    "primary_male": 4250,
+    "primary_male_competition": [],
+    "primary_female": 4458,
+    "primary_female_competition": [],
+    "center": [
+      11,
+      64
+    ],
+    "subordinates": [
+      4735,
+      4823,
+      4904,
+      4905
+    ],
+    "subordinate_request": [
+      4904,
+      4905
+    ],
+    "fledglings": [
+      5001,
+      5002,
+      5003
+    ],
+    "size": 139,
+    "quality": 6.12890625
+  },
+  "61": {
+    "primary_male": 4491,
+    "primary_male_competition": [],
+    "primary_female": 4393,
+    "primary_female_competition": [],
+    "center": [
+      25,
+      87
+    ],
+    "subordinates": [
+      4906
+    ],
+    "subordinate_request": [
+      4906
+    ],
+    "fledglings": [
+      5004,
+      5005
+    ],
+    "size": 146,
+    "quality": 6.29296875
+  },
+  "62": {
+    "primary_male": 4742,
+    "primary_male_competition": [
+      4742,
+      4812
+    ],
+    "primary_female": 4503,
+    "primary_female_competition": [
+      4503,
+      4647,
+      4802
+    ],
+    "center": [
+      70,
+      29
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5006
+    ],
+    "size": 90,
+    "quality": 3.50390625
+  },
+  "65": {
+    "primary_male": 4187,
+    "primary_male_competition": [],
+    "primary_female": 4557,
+    "primary_female_competition": [],
+    "center": [
+      52,
+      87
+    ],
+    "subordinates": [
+      4908
+    ],
+    "subordinate_request": [
+      4908
+    ],
+    "fledglings": [
+      5007,
+      5008
+    ],
+    "size": 98,
+    "quality": 4.14453125
+  },
+  "66": {
+    "primary_male": 4590,
+    "primary_male_competition": [],
+    "primary_female": 4279,
+    "primary_female_competition": [],
+    "center": [
+      72,
+      38
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5009
+    ],
+    "size": 98,
+    "quality": 3.81640625
+  },
+  "67": {
+    "primary_male": 4283,
+    "primary_male_competition": [],
+    "primary_female": 4805,
+    "primary_female_competition": [
+      4515,
+      4688,
+      4805,
+      4828
+    ],
+    "center": [
+      7,
+      78
+    ],
+    "subordinates": [
+      4828,
+      4910
+    ],
+    "subordinate_request": [
+      4910
+    ],
+    "fledglings": [
+      5010,
+      5011
+    ],
+    "size": 131,
+    "quality": 5.1953125
+  },
+  "68": {
+    "primary_male": 4594,
+    "primary_male_competition": [],
+    "primary_female": 4282,
+    "primary_female_competition": [],
+    "center": [
+      21,
+      57
+    ],
+    "subordinates": [
+      4912
+    ],
+    "subordinate_request": [
+      4912
+    ],
+    "fledglings": [
+      5012,
+      5013
+    ],
+    "size": 82,
+    "quality": 3.900390625
+  },
+  "69": {
+    "primary_male": 4190,
+    "primary_male_competition": [],
+    "primary_female": 4249,
+    "primary_female_competition": [],
+    "center": [
+      43,
+      8
+    ],
+    "subordinates": [
+      4654,
+      4913
+    ],
+    "subordinate_request": [
+      4913
+    ],
+    "fledglings": [
+      5014,
+      5015
+    ],
+    "size": 184,
+    "quality": 5.0234375
+  },
+  "71": {
+    "primary_male": 4747,
+    "primary_male_competition": [
+      4747,
+      4813
+    ],
+    "primary_female": 4532,
+    "primary_female_competition": [],
+    "center": [
+      86,
+      27
+    ],
+    "subordinates": [],
+    "subordinate_request": [
+      4914
+    ],
+    "fledglings": [
+      5016
+    ],
+    "size": 110,
+    "quality": 3.93359375
+  },
+  "73": {
+    "primary_male": 4606,
+    "primary_male_competition": [],
+    "primary_female": 4183,
+    "primary_female_competition": [],
+    "center": [
+      66,
+      18
+    ],
+    "subordinates": [
+      4917
+    ],
+    "subordinate_request": [
+      4917
+    ],
+    "fledglings": [
+      5017,
+      5018
+    ],
+    "size": 139,
+    "quality": 4.01171875
+  },
+  "74": {
+    "primary_male": 4614,
+    "primary_male_competition": [],
+    "primary_female": 4095,
+    "primary_female_competition": [],
+    "center": [
+      14,
+      90
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5019
+    ],
+    "size": 122,
+    "quality": 4.65625
+  },
+  "75": {
+    "primary_male": 4423,
+    "primary_male_competition": [],
+    "primary_female": 4011,
+    "primary_female_competition": [],
+    "center": [
+      81,
+      72
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5020
+    ],
+    "size": 169,
+    "quality": 5.21875
+  },
+  "76": {
+    "primary_male": 4192,
+    "primary_male_competition": [],
+    "primary_female": 4346,
+    "primary_female_competition": [],
+    "center": [
+      30,
+      76
+    ],
+    "subordinates": [
+      4383,
+      4474
+    ],
+    "subordinate_request": [
+      4920
+    ],
+    "fledglings": [
+      5021
+    ],
+    "size": 89,
+    "quality": 4.7890625
+  },
+  "77": {
+    "primary_male": 4757,
+    "primary_male_competition": [
+      4757,
+      4815
+    ],
+    "primary_female": 4564,
+    "primary_female_competition": [],
+    "center": [
+      23,
+      62
+    ],
+    "subordinates": [
+      4837
+    ],
+    "subordinate_request": [
+      4921
+    ],
+    "fledglings": [
+      5022
+    ],
+    "size": 90,
+    "quality": 4.7734375
+  },
+  "78": {
+    "primary_male": 4499,
+    "primary_male_competition": [],
+    "primary_female": 4479,
+    "primary_female_competition": [],
+    "center": [
+      46,
+      76
+    ],
+    "subordinates": [
+      4923
+    ],
+    "subordinate_request": [
+      4923
+    ],
+    "fledglings": [
+      5023,
+      5024
+    ],
+    "size": 116,
+    "quality": 5.80859375
+  },
+  "79": {
+    "primary_male": 4501,
+    "primary_male_competition": [],
+    "primary_female": 4361,
+    "primary_female_competition": [],
+    "center": [
+      43,
+      56
+    ],
+    "subordinates": [
+      4924
+    ],
+    "subordinate_request": [
+      4924
+    ],
+    "fledglings": [
+      5025,
+      5026
+    ],
+    "size": 84,
+    "quality": 4.2890625
+  },
+  "80": {
+    "primary_male": 4193,
+    "primary_male_competition": [],
+    "primary_female": 4566,
+    "primary_female_competition": [],
+    "center": [
+      94,
+      22
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5027
+    ],
+    "size": 191,
+    "quality": 3.42578125
+  },
+  "81": {
+    "primary_male": 4615,
+    "primary_male_competition": [],
+    "primary_female": 4343,
+    "primary_female_competition": [],
+    "center": [
+      76,
+      22
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5028
+    ],
+    "size": 140,
+    "quality": 3.349609375
+  },
+  "82": {
+    "primary_male": 4620,
+    "primary_male_competition": [],
+    "primary_female": 4484,
+    "primary_female_competition": [],
+    "center": [
+      73,
+      78
+    ],
+    "subordinates": [
+      4927
+    ],
+    "subordinate_request": [
+      4927
+    ],
+    "fledglings": [
+      5029,
+      5030
+    ],
+    "size": 133,
+    "quality": 3.66015625
+  },
+  "83": {
+    "primary_male": 4659,
+    "primary_male_competition": [],
+    "primary_female": 4527,
+    "primary_female_competition": [
+      4527,
+      4720,
+      4811
+    ],
+    "center": [
+      96,
+      34
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5031
+    ],
+    "size": 118,
+    "quality": 3.232421875
+  },
+  "84": {
+    "primary_male": 4758,
+    "primary_male_competition": [
+      4758,
+      4818
+    ],
+    "primary_female": 4487,
+    "primary_female_competition": [],
+    "center": [
+      14,
+      75
+    ],
+    "subordinates": [
+      4844
+    ],
+    "subordinate_request": [],
+    "fledglings": [
+      5032
+    ],
+    "size": 103,
+    "quality": 4.8515625
+  },
+  "85": {
+    "primary_male": 4774,
+    "primary_male_competition": [
+      4774,
+      4819
+    ],
+    "primary_female": 4669,
+    "primary_female_competition": [],
+    "center": [
+      62,
+      85
+    ],
+    "subordinates": [
+      4670,
+      4765,
+      4845
+    ],
+    "subordinate_request": [
+      4932
+    ],
+    "fledglings": [
+      5033
+    ],
+    "size": 141,
+    "quality": 5.80078125
+  },
+  "86": {
+    "primary_male": 4775,
+    "primary_male_competition": [
+      4775,
+      4821
+    ],
+    "primary_female": 4179,
+    "primary_female_competition": [],
+    "center": [
+      51,
+      66
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5034
+    ],
+    "size": 76,
+    "quality": 3.318359375
+  },
+  "87": {
+    "primary_male": 4668,
+    "primary_male_competition": [],
+    "primary_female": 4554,
+    "primary_female_competition": [
+      4554,
+      4725,
+      4769
+    ],
+    "center": [
+      37,
+      97
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5035
+    ],
+    "size": 130,
+    "quality": 4.24609375
+  },
+  "88": {
+    "primary_male": 4778,
+    "primary_male_competition": [
+      4778,
+      4824
+    ],
+    "primary_female": 4571,
+    "primary_female_competition": [],
+    "center": [
+      10,
+      49
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5036
+    ],
+    "size": 120,
+    "quality": 3.45703125
+  },
+  "89": {
+    "primary_male": 4429,
+    "primary_male_competition": [],
+    "primary_female": 4139,
+    "primary_female_competition": [],
+    "center": [
+      34,
+      53
+    ],
+    "subordinates": [],
+    "subordinate_request": [],
+    "fledglings": [
+      5037
+    ],
+    "size": 83,
+    "quality": 4.5234375
+  },
+  "90": {
+    "primary_male": 4780,
+    "primary_male_competition": [
+      4780,
+      4826
+    ],
+    "primary_female": 4309,
+    "primary_female_competition": [],
+    "center": [
+      39,
+      84
+    ],
+    "subordinates": [
+      4852
+    ],
+    "subordinate_request": [
+      4938
+    ],
+    "fledglings": [
+      5038
+    ],
+    "size": 111,
+    "quality": 5.44140625
+  },
+  "91": {
+    "primary_male": 4781,
+    "primary_male_competition": [
+      4781,
+      4833
+    ],
+    "primary_female": 4490,
+    "primary_female_competition": [],
+    "center": [
+      36,
+      70
+    ],
+    "subordinates": [
+      4854
+    ],
+    "subordinate_request": [],
+    "fledglings": [
+      5039
+    ],
+    "size": 70,
+    "quality": 3.814453125
+  }
+}
