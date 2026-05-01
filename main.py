@@ -13,6 +13,7 @@ from kinship import Kinship
 from population import Population
 from individual_models.genetic_algorithm import GeneticController as ruleBasedAI
 from territory import TerritoryMap
+import json
 
 
 def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, life_history_fitness_dict=None, habitat_quality_dict=None):
@@ -438,23 +439,23 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
     # RECORD DATA
 
         # plot territory map
-        if year % plot_years == 0:
-
-            # get map
-            image = territory_map.territory_map.copy()
-
-            # rank data
-            image = rankdata(image, method="dense")
-
-            # reshape
-            image = image.reshape(territory_map.territory_map.shape)
-
-            # plot
-            plt.figure(figsize=(4,4))
-            plt.imshow(image, cmap=sns.color_palette("cubehelix", as_cmap=True), origin="upper", interpolation="nearest")
-            plt.title("year:" + str(year))
-            plt.savefig(os.path.join(output_path, "territory_map_year_" + str(year) + ".png"))
-            plt.show()
+        # if year % plot_years == 0:
+        #
+        #     # get map
+        #     image = territory_map.territory_map.copy()
+        #
+        #     # rank data
+        #     image = rankdata(image, method="dense")
+        #
+        #     # reshape
+        #     image = image.reshape(territory_map.territory_map.shape)
+        #
+        #     # plot
+        #     plt.figure(figsize=(4,4))
+        #     plt.imshow(image, cmap=sns.color_palette("cubehelix", as_cmap=True), origin="upper", interpolation="nearest")
+        #     plt.title("year:" + str(year))
+        #     plt.savefig(os.path.join(output_path, "territory_map_year_" + str(year) + ".png"))
+        #     plt.show()
 
         # update kinship
         kinship.update()
@@ -550,9 +551,9 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
     print("writing territory_dict_no_distance_map.json to", output_path)
 
     # habitat quality map
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(quality_map)
-    plt.show()
+    # plt.figure(figsize=(8, 6))
+    # sns.heatmap(quality_map)
+    # plt.show()
 
 if __name__ == "__main__":
     run_simulation()
