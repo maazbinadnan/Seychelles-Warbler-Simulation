@@ -18,7 +18,7 @@ population.py            # Population class — individual life histories and fi
 kinship.py               # Kinship class — pairwise relatedness tracking
 territory.py             # TerritoryMap class — spatial territory allocation
 multiple_test_runs.py    # Runs the simulation N times and saves each to its own folder
-fine_tuning_all.py       # Pareto-front parameter optimisation (requires ax-platform)
+fine_tuning_all.py       # Parameter optimisation generates Pareto-front(requires ax-platform)
 individual_models/
     rule_based.py        # ruleBasedAI — deterministic decision engine
     utility_based.py     # utilityBasedAI — utility-function decision engine
