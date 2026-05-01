@@ -11,15 +11,15 @@ import json
 
 from kinship import Kinship
 from population import Population
-from individual_models.genetic_algorithm import GeneticController as ruleBasedAI
+# from individual_models.genetic_algorithm import GeneticController as ruleBasedAI
+from individual_models.rule_based import ruleBasedAI
 from territory import TerritoryMap
 import json
 
 
-def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, life_history_fitness_dict=None, habitat_quality_dict=None):
+def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, life_history_fitness_dict=None, habitat_quality_dict=None, output_path="output/"):
     # CREATE DATASETS
 
-    output_path = "output/"
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
@@ -137,7 +137,9 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                     territory_map=territory_map,
                     kinship=kinship,
                     start_year=year,
-                    min_kinship = min_kinship
+                    min_kinship = min_kinship,
+                    # establish_samples = 8,
+                    # base_cost= 0.8
                     )
 
     #______________________________________________________________________________
@@ -160,9 +162,7 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
 
         for ind in pop.get_inds():
 
-            actions = pop.get_actions(ind)
             sex = pop[ind]["sex"]
-
             ruleAI._set_year(year=year)
 
             territory ,center, action = ruleAI.action(ind=ind)

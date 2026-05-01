@@ -6,7 +6,7 @@ from territory import TerritoryMap
 
 
 class GeneticController:
-    def __init__(self, pop: Population, territory_map: TerritoryMap, kinship: Kinship, start_year: int, min_kinship: float) -> None:
+    def __init__(self, pop: Population, territory_map: TerritoryMap, kinship: Kinship, start_year: int, min_kinship: float, establish_samples = 8,base_cost: float = 1.0) -> None:
         self.pop = pop
         self.territory_map = territory_map
         self.kinship = kinship
@@ -14,12 +14,15 @@ class GeneticController:
         self.min_kinship = min_kinship
         self.year = start_year
         self.genome_keys = ("w_kin", "w_qual", "w_risk")
+        self.establish_samples = establish_samples
+        self.base_cost = base_cost
 
     def _set_year(self, year):
         self.year = year
 
     def _get_genome(self, ind):
         genome = self.pop[ind].get("genome")
+        #fall back, where it sets it all to 0.5 random
         if genome is None:
             return {key: 0.5 for key in self.genome_keys}
         return {key: float(genome.get(key, 0.5)) for key in self.genome_keys}
@@ -44,16 +47,168 @@ class GeneticController:
     def action(self, ind):
         life_history = self.pop[ind]["life_history"]
 
+        candidates = self._candidate_actions(ind, life_history)
+        if not candidates:
+            return self.pop[ind]["territory"], (-1, -1), "nothing"
+
+        best_action, best_territory, best_center, _ = max(candidates, key=lambda item: item[3])
+        return best_territory, best_center, best_action
+
+    def _candidate_actions(self, ind, life_history):
+        sex = self.pop[ind]["sex"]
+        territory = self.pop[ind]["territory"]
+        candidates = [("nothing", territory, (-1, -1), self._score_action(ind, "nothing", territory, None))]
+
         if life_history == "floater":
-            return self._decide_floater(ind)
+            if sex == "female":
+                #first search for primary vacancies, then subordinate territories, then random territories, same logic as rulebased, but instead this is scored using genome
+                primary_vacancy = self._find_primary_vacancy(ind, sex="female", life_history="floater")
+                if primary_vacancy is not None:
+                    candidates.append(("compete_primary", primary_vacancy, (-1, -1), self._score_action(ind, "compete_primary", primary_vacancy, None)))
 
-        if life_history == "fledgling":
-            return self._decide_fledgling(ind)
+                subordinate_territory = self._find_best_subordinate_territory(ind)
+                if subordinate_territory is not None:
+                    candidates.append(("request_subordinate", subordinate_territory, (-1, -1), self._score_action(ind, "request_subordinate", subordinate_territory, None)))
 
-        if life_history == "subordinate":
-            return self._decide_subordinate(ind)
+                territories = self.territory_map.get_territories()
+                if territories:
+                    random_territory = np.random.choice(list(territories.keys()))
+                    candidates.append(("request_subordinate", random_territory, (-1, -1), self._score_action(ind, "request_subordinate", random_territory, None)))
 
-        return self.pop[ind]["territory"], (-1, -1), "nothing"
+            elif sex == "male":
+                primary_vacancy = self._find_primary_vacancy(ind, sex="male", life_history="floater")
+                if primary_vacancy is not None:
+                    candidates.append(("compete_primary", primary_vacancy, (-1, -1), self._score_action(ind, "compete_primary", primary_vacancy, None)))
+
+                center = self._best_establish_center(ind)
+                candidates.append(("establish_territory", territory, center, self._score_action(ind, "establish_territory", territory, center)))
+
+        elif life_history == "fledgling":
+            if sex == "female":
+                candidates.append(("request_subordinate", territory, (-1, -1), self._score_action(ind, "request_subordinate", territory, None)))
+                candidates.append(("disperse", territory, (-1, -1), self._score_action(ind, "disperse", territory, None)))
+            elif sex == "male":
+                candidates.append(("request_subordinate", territory, (-1, -1), self._score_action(ind, "request_subordinate", territory, None)))
+                candidates.append(("disperse", territory, (-1, -1), self._score_action(ind, "disperse", territory, None)))
+
+        elif life_history == "subordinate":
+            if sex == "female":
+                primary_vacancy = self._find_primary_vacancy(ind, sex="female", life_history="subordinate")
+                if primary_vacancy is not None:
+                    candidates.append(("compete_primary", primary_vacancy, (-1, -1), self._score_action(ind, "compete_primary", primary_vacancy, None)))
+                candidates.append(("disperse", territory, (-1, -1), self._score_action(ind, "disperse", territory, None)))
+                candidates.append(("nothing", territory, (-1, -1), self._score_action(ind, "nothing", territory, None)))
+
+            elif sex == "male":
+                primary_vacancy = self._find_primary_vacancy(ind, sex="male", life_history="subordinate")
+                if primary_vacancy is not None:
+                    candidates.append(("compete_primary", primary_vacancy, (-1, -1), self._score_action(ind, "compete_primary", primary_vacancy, None)))
+                candidates.append(("disperse", territory, (-1, -1), self._score_action(ind, "disperse", territory, None)))
+                candidates.append(("nothing", territory, (-1, -1), self._score_action(ind, "nothing", territory, None)))
+
+        return candidates
+
+    def _score_action(self, ind, action, territory, center) -> float:
+        genome = self._get_genome(ind)
+
+        if action == "nothing":
+            return 0.0
+
+        if action == "disperse":
+            return -1.0 + (0.25 * genome["w_risk"])
+
+        if action == "request_subordinate":
+            return self._score_request_subordinate(ind, territory, genome)
+
+        if action == "compete_primary":
+            return self._score_compete_primary(ind, territory, genome)
+
+        if action == "establish_territory":
+            return self._score_establish_territory(ind, center, genome)
+
+        return -1.0
+
+    def _score_request_subordinate(self, ind, territory, genome) -> float:
+        territories = self.territory_map.get_territories()
+        if territory not in territories:
+            return -1.0
+
+        territory_info = territories[territory]
+        quality = float(territory_info.get("quality") or 0.0)
+        subordinates = territory_info.get("subordinates", [])
+        current_group_size = 2 + len(subordinates)
+
+        primary_male = territory_info.get("primary_male")
+        primary_female = territory_info.get("primary_female")
+        relatedness_to_male = self._relatedness(ind, primary_male)
+        relatedness_to_female = self._relatedness(ind, primary_female)
+        kin_gain = (relatedness_to_male + relatedness_to_female) / 2.0
+        #direct gain is the quality of the territory, divided by the current group size (including the primary pair), so that larger groups have diminishing returns, and smaller groups have higher returns
+        direct_gain = quality / max(current_group_size, 1)
+        cost = max(0.0, current_group_size - quality) + (1.0 - kin_gain)
+        #finally manage it as an individual's cost + the direct fitness + indirect fitness
+        return (genome["w_kin"] * kin_gain * quality) + (genome["w_qual"] * direct_gain) - (genome["w_risk"] * cost)
+
+    def _score_compete_primary(self, ind, territory, genome) -> float:
+        territories = self.territory_map.get_territories()
+        if territory not in territories:
+            return -1.0
+
+        territory_info = territories[territory]
+        quality = float(territory_info.get("quality") or 0.0)
+        competition_key = "primary_female_competition" if self.pop[ind]["sex"] == "female" else "primary_male_competition"
+        competition = len(territory_info.get(competition_key, []))
+
+        primary_male = territory_info.get("primary_male")
+        primary_female = territory_info.get("primary_female")
+        subordinates = territory_info.get("subordinates", [])
+        #check relatedness to all group members
+        kin_targets = [target for target in (primary_male, primary_female, *subordinates) if target is not None]
+        kin_gain = 0.0
+        #check relatedness to each target
+        if kin_targets:
+            kin_gain = sum(self._relatedness(ind, target) for target in kin_targets) / len(kin_targets)
+
+        #add a bonus if compete primary list is empty
+        vacancy_bonus = 1.0 if competition == 0 else 0.0
+        #hence, the direct gain would be quality of the territory, plus vacancy bonus
+        direct_gain = quality + vacancy_bonus
+        #cost is number of competitors, 
+        cost = competition + (1.0 / max(quality, 1.0))
+        
+        #finally, the score is the weighted sum of kin gain (aka indirect fitness) and direct gain, minus the weighted cost
+        return (genome["w_kin"] * kin_gain * quality) + (genome["w_qual"] * direct_gain) - (genome["w_risk"] * cost)
+
+
+    def _best_establish_center(self, ind):
+        #take a sample of 8 random territories and score them based on the individual's genome, then return the center thats scoired the best
+        best_center = (np.random.randint(0, self.territory_map.dims[0]), np.random.randint(0, self.territory_map.dims[1]))
+        best_score = -float("inf")
+        for _ in range(self.establish_samples - 1):
+            center = (np.random.randint(0, self.territory_map.dims[0]), np.random.randint(0, self.territory_map.dims[1]))
+            score = self._score_establish_territory(ind, center, self._get_genome(ind))
+            if score > best_score:
+                best_center = center
+                best_score = score
+
+        return best_center
+
+    def _score_establish_territory(self, ind, center, genome) -> float:
+        if center is None:
+            return 0.0
+
+        test_territory = {
+            "territory" : -1,
+            "center" : center,
+        }   
+        #use territory map's update function
+        test_quality = self.territory_map.update(new_territory=test_territory)
+        quality = test_quality["quality"] if test_quality else 0.0
+        
+        # we define the base cost as the risk an individual carries + the base cost  + 1/their fitness -> lower fitness = higher cost
+        cost = self.base_cost + (1.0/self.pop[ind]["fitness"])
+        direct_gain = quality
+        return (genome["w_qual"] * direct_gain) - (genome["w_risk"] * cost)
 
     def _find_primary_vacancy(self, ind, sex: str, life_history: str):
         primary_key = "primary_female" if sex == "female" else "primary_male"
@@ -66,6 +221,7 @@ class GeneticController:
                 return own_territory
             return None
 
+        #return all territories where primary is None, candiates stores [territory_id, number of competitors]
         candidates = [
             (territory_id, len(info[competition_key]))
             for territory_id, info in territories.items()
@@ -73,6 +229,7 @@ class GeneticController:
         ]
         if not candidates:
             return None
+        #return the one with the least competition
         return min(candidates, key=lambda x: x[1])[0]
 
     def _is_high_quality_territory(self, territory_id: int) -> bool:
@@ -109,102 +266,6 @@ class GeneticController:
 
         scored.sort(key=lambda x: x[0], reverse=True)
         return scored[0][1]
-
-    def _decide_floater(self, ind):
-        territory = self.pop[ind]["territory"]
-        sex = self.pop[ind]["sex"]
-        genome = self._get_genome(ind)
-
-        if self.year == self.start_year:
-            if sex == "male":
-                center = (np.random.randint(0, self.territory_map.dims[0]), np.random.randint(0, self.territory_map.dims[1]))
-                return territory, center, "establish_territory"
-            return territory, (-1, -1), "nothing"
-
-        if sex == "female":
-            territory_id = self._find_primary_vacancy(ind, sex="female", life_history="floater")
-            if territory_id is not None:
-                return territory_id, (-1, -1), "compete_primary"
-
-            best_territory = self._find_best_subordinate_territory(ind)
-            if best_territory is not None:
-                return best_territory, (-1, -1), "request_subordinate"
-
-            territories = self.territory_map.get_territories()
-            if territories and genome["w_risk"] > 0.5:
-                random_territory = np.random.choice(list(territories.keys()))
-                return random_territory, (-1, -1), "request_subordinate"
-
-            return territory, (-1, -1), "nothing"
-
-        if sex == "male":
-            territory_id = self._find_primary_vacancy(ind, sex="male", life_history="floater")
-            if territory_id is not None:
-                return territory_id, (-1, -1), "compete_primary"
-
-            center = (np.random.randint(0, self.territory_map.dims[0]), np.random.randint(0, self.territory_map.dims[1]))
-            return territory, center, "establish_territory"
-
-        return territory, (-1, -1), "nothing"
-
-    def _decide_fledgling(self, ind):
-        territory = self.pop[ind]["territory"]
-        sex = self.pop[ind]["sex"]
-        genome = self._get_genome(ind)
-
-        if sex == "female" and territory in self.territory_map.get_territories():
-            quality = self._territory_quality(territory)
-            primary_female = self.territory_map[territory].get("primary_female")
-            relatedness = self._relatedness(ind, primary_female)
-            stay_score = genome["w_kin"] * relatedness + genome["w_qual"] * quality
-            disperse_score = genome["w_risk"] * (1.0 - relatedness)
-            if stay_score >= disperse_score:
-                return territory, (-1, -1), "request_subordinate"
-            return territory, (-1, -1), "disperse"
-
-        if sex == "male":
-            disperse_score = genome["w_risk"]
-            stay_score = genome["w_kin"] * self.min_kinship
-            if stay_score >= disperse_score:
-                return territory, (-1, -1), "request_subordinate"
-            return territory, (-1, -1), "disperse"
-
-        return territory, (-1, -1), "nothing"
-
-    def _decide_subordinate(self, ind):
-        sex = self.pop[ind]["sex"]
-        territory = self.pop[ind]["territory"]
-        genome = self._get_genome(ind)
-        territories = self.territory_map.get_territories()
-
-        if territory not in territories:
-            return territory, (-1, -1), "nothing"
-
-        if sex == "female":
-            to_compete_territory = self._find_primary_vacancy(ind, sex="female", life_history="subordinate")
-            if to_compete_territory is not None:
-                return to_compete_territory, (-1, -1), "compete_primary"
-
-            primary_female = territories[territory].get("primary_female")
-            relatedness = self._relatedness(ind, primary_female)
-            stay_score = genome["w_kin"] * relatedness + genome["w_qual"] * self._territory_quality(territory)
-            disperse_score = genome["w_risk"] * (1.0 - relatedness)
-            if stay_score >= disperse_score:
-                return territory, (-1, -1), "nothing"
-            return territory, (-1, -1), "disperse"
-
-        if sex == "male":
-            to_compete_territory = self._find_primary_vacancy(ind, sex="male", life_history="subordinate")
-            if to_compete_territory is not None:
-                return to_compete_territory, (-1, -1), "compete_primary"
-
-            primary_male = territories[territory].get("primary_male")
-            relatedness = self._relatedness(ind, primary_male)
-            if genome["w_kin"] * relatedness >= genome["w_risk"]:
-                return territory, (-1, -1), "nothing"
-            return territory, (-1, -1), "disperse"
-
-        return territory, (-1, -1), "nothing"
 
     def evict_subordinate_male_primary(self, ind):
         territory = self.pop[ind]["territory"]
