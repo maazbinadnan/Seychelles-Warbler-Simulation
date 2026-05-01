@@ -4,6 +4,7 @@ from ax.api.configs import RangeParameterConfig
 import pandas as pd
 import numpy as np
 import os
+from ax.analysis.summary import Summary
 
 #----------------------------------------------------------------------------------------------
 def get_territory_quality(df):
@@ -219,3 +220,11 @@ try:
 except Exception as e:
     print(f"Could not compute Pareto frontier: {e}")
     print("Experiment saved to experiment.json.")
+
+summary = Summary()
+card = summary.compute(
+    experiment=client._experiment,
+    generation_strategy=client._generation_strategy,
+)
+print(card.df.to_string())
+card.df.to_json("summary.json", orient="records", indent=2)
