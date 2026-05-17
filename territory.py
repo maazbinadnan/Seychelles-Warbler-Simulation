@@ -1,14 +1,14 @@
 import random
 
 import numpy as np
-
+import pandas as pd
 
 class TerritoryMap:
     def __init__(self, pop, habitat_quality, diameter, min_quality):
         self.habitat_quality = habitat_quality
         self.pop = pop
         self.dims = habitat_quality.shape
-        self.territory_map = None
+        self.territory_map = pd.DataFrame()
         self.diameter = diameter
         self.min_quality = min_quality
         self.territory_dict = {}

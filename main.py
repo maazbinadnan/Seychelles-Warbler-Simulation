@@ -1,6 +1,8 @@
 import os
 import random
 import json
+import argparse
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +24,15 @@ from territory import TerritoryMap
 import json
 
 
-def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, life_history_fitness_dict=None, habitat_quality_dict=None, epsilon = 0.3, output_path="output/"):
+def run_simulation(diameter=20, 
+                   subordinate_benefit=0.2, 
+                   age_fitness_dict=None, 
+                   life_history_fitness_dict=None, 
+                   habitat_quality_dict=None, 
+                   epsilon = 0.3, 
+                   output_path="output/",
+                   ai_name = None
+                   ):
     # CREATE DATASETS
 
     if not os.path.exists(output_path):
@@ -138,48 +148,51 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
                            "fitness": 0}
 
     #declaring which model to use
-    '''
-    individual_ai = ruleBasedAI(
-                    pop=pop,
-                    territory_map=territory_map,
-                    kinship=kinship,
-                    start_year=year,
-                    min_kinship = min_kinship,
-                    # establish_samples = 8,
-                    # base_cost= 0.8
+    
+    if ai_name == "utility":
+        print("initialized utility based AI")
+        individual_ai = utilityBasedAI(
+                        pop=pop,
+                        territory_map=territory_map,
+                        kinship=kinship,
+                        min_kinship=min_kinship,
+                        year=year,
+                        diameter=diameter,
+                        min_quality=min_quality,
+                        )
+    elif ai_name == "q_learning":
+        print("initialized q learning AI")
+        individual_ai = qLearningAI(
+                        pop=pop,
+                        territory_map=territory_map,
+                        kinship=kinship,
+                        min_kinship=min_kinship,
+                        year=year,
+                        diameter=diameter,
+                        min_quality=min_quality,
+                        epsilon=epsilon
                     )
-    '''
-    '''
-    individual_ai = utilityBasedAI(
-                    pop=pop,
-                    territory_map=territory_map,
-                    kinship=kinship,
-                    min_kinship=min_kinship,
-                    year=year,
-                    diameter=diameter,
-                    min_quality=min_quality,
-                    )
-    '''
-    individual_ai = qLearningAI(
-                    pop=pop,
-                    territory_map=territory_map,
-                    kinship=kinship,
-                    min_kinship=min_kinship,
-                    year=year,
-                    diameter=diameter,
-                    min_quality=min_quality,
-                    epsilon=epsilon
-                )
-    '''
-    individual_ai = GeneticController(
-                    pop = pop,
-                    territory_map = territory_map,
-                    kinship = kinship,
-                    start_year = year,
-                    min_kinship = min_kinship,
-                    establish_samples = 8,
-                    base_cost = 0.8)
-    '''
+    elif ai_name == "genetic_algorithm":
+        print("initialized genetic algorithm AI")
+        individual_ai = GeneticController(
+                        pop = pop,
+                        territory_map = territory_map,
+                        kinship = kinship,
+                        start_year = year,
+                        min_kinship = min_kinship,
+                        establish_samples = 8,
+                        base_cost = 0.8)
+    else:
+        print("initialized rule based AI")
+        individual_ai = ruleBasedAI(
+                        pop=pop,
+                        territory_map=territory_map,
+                        kinship=kinship,
+                        start_year=year,
+                        min_kinship = min_kinship,
+                        # establish_samples = 8,
+                        # base_cost= 0.8
+                        )
 
     #______________________________________________________________________________
 
@@ -531,49 +544,50 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
         #---------------------------------
         # calculating q-learning reward
         #---------------------------------
-        for ind in pop.get_inds():
-            # calculate all bonuses to reward calculations
-            # life history bonus
-            lh   = pop[ind]["life_history"]
-            base = pop[ind]["fitness"]          
+        if isinstance(individual_ai, qLearningAI):
+            for ind in pop.get_inds():
+                # calculate all bonuses to reward calculations
+                # life history bonus
+                lh   = pop[ind]["life_history"]
+                base = pop[ind]["fitness"]          
 
-            lh_bonus = {
-                        "primary":     3.0,
-                        "subordinate": 1.0,
-                        "fledgling":   0.3,
-                        "floater":    -1.5,
-                    }.get(lh, 0.0)
-            # parental success bonus
-            parental_success_bonus = 0.0
-            if lh == "primary":
-                offspring_list = pop[ind].get("offspring", [])
-                for kid_id in offspring_list:
-                    if kid_id in pop.get_inds(): # If the child is still alive
-                        # Reward the parent for the child survival fitness
-                        parental_success_bonus += (pop[kid_id]["fitness"] * 0.5)
-            # sex bonus
-            ind_sex = pop[ind]["sex"]
-            sex_bonus = 1.5 if (ind_sex == "female" and lh in ("primary", "subordinate")) else 0.0
-            
-            
-            # attempt at competing bonus
-            attempt_bonus = 0.0
-            if ind in individual_ai.current_decisions:
-                _, attempted_action = individual_ai.current_decisions[ind]  # peek without popping
-                if attempted_action in ("compete_primary", "request_subordinate", "establish_territory"):
-                    attempt_bonus = 0.5
-                    
-            # change in fitness from last year 
-            kinship_delta = (fitness_df.get(ind, {"fitness": 0.0})["fitness"] - prev_fitness.get(ind, 0.0))
-            #reward calculation
-            reward = (base + 
-              lh_bonus + 
-              sex_bonus + 
-              attempt_bonus + 
-              parental_success_bonus + 
-              (0.5 * kinship_delta))
-            # updating q values
-            individual_ai.update_q_values(ind, reward)
+                lh_bonus = {
+                            "primary":     3.0,
+                            "subordinate": 1.0,
+                            "fledgling":   0.3,
+                            "floater":    -1.5,
+                        }.get(lh, 0.0)
+                # parental success bonus
+                parental_success_bonus = 0.0
+                if lh == "primary":
+                    offspring_list = pop[ind].get("offspring", [])
+                    for kid_id in offspring_list:
+                        if kid_id in pop.get_inds(): # If the child is still alive
+                            # Reward the parent for the child survival fitness
+                            parental_success_bonus += (pop[kid_id]["fitness"] * 0.5)
+                # sex bonus
+                ind_sex = pop[ind]["sex"]
+                sex_bonus = 1.5 if (ind_sex == "female" and lh in ("primary", "subordinate")) else 0.0
+
+
+                # attempt at competing bonus
+                attempt_bonus = 0.0
+                if ind in individual_ai.current_decisions:
+                    _, attempted_action = individual_ai.current_decisions[ind]  # peek without popping
+                    if attempted_action in ("compete_primary", "request_subordinate", "establish_territory"):
+                        attempt_bonus = 0.5
+
+                # change in fitness from last year 
+                kinship_delta = (fitness_df.get(ind, {"fitness": 0.0})["fitness"] - prev_fitness.get(ind, 0.0))
+                #reward calculation
+                reward = (base + 
+                  lh_bonus + 
+                  sex_bonus + 
+                  attempt_bonus + 
+                  parental_success_bonus + 
+                  (0.5 * kinship_delta))
+                # updating q values
+                individual_ai.update_q_values(ind, reward)
 
 
        
@@ -611,9 +625,10 @@ def run_simulation(diameter=20, subordinate_benefit=0.2, age_fitness_dict=None, 
             print("Population died at year", year, "with", len(pop.get_inds()), "individuals", "and", len(territory_map.territory_dict), "territories")
 
         year += 1
+    if isinstance(individual_ai, qLearningAI):
     # end of episode q learning and table update
-    individual_ai.end_of_episode_update()
-    individual_ai.save_q_table()
+        individual_ai.end_of_episode_update()
+        individual_ai.save_q_table()
         
         
     
@@ -678,31 +693,36 @@ if __name__ == "__main__":
     episode_fitness = []
     current_epsilon = 0.3 
 
-    for episode in range(n_episodes):
-        print(f"\n=== EPISODE {episode + 1}/{n_episodes} ===")
-        mean_fitness = run_simulation(epsilon=current_epsilon)
-        episode_fitness.append(mean_fitness)
-        
-        # linear decay
-        current_epsilon = max(0.1, 0.3 - (episode * (0.2 / n_episodes)))
-        print(f"Mean inclusive fitness: {mean_fitness:.4f}, epsilon: {current_epsilon:.4f}")
-        
+    parser = argparse.ArgumentParser(description="Commands to run Seychelles Warbler Simulation with different AI models")
+    parser.add_argument("--ai", type=str, choices=["utility", "q_learning", "genetic_algorithm", "rule_based"], default="rule_based", help="Choose which AI model to run the simulation with")
+    args = parser.parse_args()
+    if args.ai == "q_learning":
+        for episode in range(n_episodes):
+            print(f"\n=== EPISODE {episode + 1}/{n_episodes} ===")
+            mean_fitness = run_simulation(epsilon=current_epsilon)
+            episode_fitness.append(mean_fitness)
 
-    # Plotting per episode fitness with 10 episode rolling average 
-    window = 10
-    rolling_mean = pd.Series(episode_fitness).rolling(window=window, min_periods=1).mean()
+            # linear decay
+            current_epsilon = max(0.1, 0.3 - (episode * (0.2 / n_episodes)))
+            print(f"Mean inclusive fitness: {mean_fitness:.4f}, epsilon: {current_epsilon:.4f}")
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(range(1, n_episodes + 1), episode_fitness, marker="o", linewidth=1, 
-            alpha=0.4, color="steelblue", label="Per-episode fitness")
-    plt.plot(range(1, n_episodes + 1), rolling_mean, linewidth=2.5, 
-            color="steelblue", label=f"{window}-episode rolling mean")
-    plt.axhline(y=np.mean(episode_fitness[-10:]), color="red", linestyle="--",
-                label=f"Last 10 mean: {np.mean(episode_fitness[-10:]):.3f}")
-    plt.xlabel("Episode")
-    plt.ylabel("Mean Inclusive Fitness")
-    plt.title("Inclusive Fitness per Episode — Q-Learning Agent")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig("output/inclusive_fitness_per_episode.png", dpi=150)
-    plt.close()
+        # Plotting per episode fitness with 10 episode rolling average 
+        window = 10
+        rolling_mean = pd.Series(episode_fitness).rolling(window=window, min_periods=1).mean()
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, n_episodes + 1), episode_fitness, marker="o", linewidth=1, 
+                alpha=0.4, color="steelblue", label="Per-episode fitness")
+        plt.plot(range(1, n_episodes + 1), rolling_mean, linewidth=2.5, 
+                color="steelblue", label=f"{window}-episode rolling mean")
+        plt.axhline(y=np.mean(episode_fitness[-10:]), color="red", linestyle="--",
+                    label=f"Last 10 mean: {np.mean(episode_fitness[-10:]):.3f}")
+        plt.xlabel("Episode")
+        plt.ylabel("Mean Inclusive Fitness")
+        plt.title("Inclusive Fitness per Episode — Q-Learning Agent")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig("output/inclusive_fitness_per_episode.png", dpi=150)
+        plt.close()
+    else:
+        run_simulation(ai_name=args.ai)

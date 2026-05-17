@@ -106,6 +106,34 @@ Open `main.py` and locate the model block (~line 160). Only one model should be 
 
 ---
 
+## Command-line Arguments
+
+- **`--ai`**: Choose which AI model to run the simulation with. Usage:
+
+```bash
+python main.py --ai q_learning
+python main.py --ai genetic_algorithm
+```
+
+- **Default**: `rule_based` (no flag required).
+
+- **`q_learning` special behaviour**: running with `--ai q_learning` performs multiple episodes (controlled by `n_episodes` in `main.py`, default 20) with a decaying `epsilon` exploration rate. The run produces `output/inclusive_fitness_per_episode.png` and the Q-table is saved by the Q-learning agent.
+
+- **Advanced / programmatic usage**: `main.py` exposes `run_simulation(...)` which can be called from other scripts to override internal parameters. Example:
+
+```python
+from main import run_simulation
+run_simulation(diameter=30, subordinate_benefit=0.25, epsilon=0.2, output_path="output/custom/", ai_name="utility")
+```
+
+- **Common `run_simulation` kwargs**:
+    - **`diameter`**: (int) maximum territory diameter — default 20
+    - **`subordinate_benefit`**: (float) fitness multiplier per subordinate — default 0.2
+    - **`epsilon`**: (float) exploration rate for Q-Learning — default 0.3
+    - **`output_path`**: (str) folder to write CSVs and images — default `output/`
+    - **`ai_name`**: (str) the AI to use when calling programmatically (`utility`, `q_learning`, `genetic_algorithm`, `rule_based`)
+
+
 ### Parameter optimisation (optional)
 
 ```bash
