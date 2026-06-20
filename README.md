@@ -1,6 +1,8 @@
 # Seychelles Warbler Simulation
 
-An agent-based simulation of cooperative breeding dynamics in the Seychelles Warbler (*Acrocephalus sechellensis*), built for SCC-452. The model investigates kin selection, territory quality, and the evolution of subordinate helping behaviour across four interchangeable AI decision engines.
+## About
+
+This is an agent-based simulation of cooperative breeding in the Seychelles Warbler (*Acrocephalus sechellensis*). It explores how kinship, territory quality, and different AI decision strategies influence helping behaviour and territory formation.
 
 ---
 
